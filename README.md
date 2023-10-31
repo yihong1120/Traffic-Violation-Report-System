@@ -6,6 +6,6 @@ A platform for users to upload and share the responses from law enforcement agen
 - Attach the Llama2 model to the customer response bot.
 - Design a SQL database on the cloud.
 - Leverage the Google Maps API to depict the location, number, and severity of traffic violations.
-- Deploy the server on Raspberry Pi 5 and establish nginx redirection of data on Ubuntu 22.4.
+- Deploy the server on Raspberry Pi 5 and establish nginx redirection of data on Ubuntu 22.04.
 - Procure a static domain from Chunghwa Telecom (CHT).
 - Register for Google Webmaster Tools

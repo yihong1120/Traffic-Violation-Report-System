@@ -18,9 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from reports import views as report_views
 from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # path('login/', LoginView.as_view(), name='login'),
+    path('login/', report_views.login, name='login'),
+    path('register/', report_views.register, name='register'),
     path('account/', report_views.account_view, name='account'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('', report_views.home, name='home'),
