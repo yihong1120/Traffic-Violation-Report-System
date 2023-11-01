@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from multiupload.fields import MultiFileField
 from datetime import datetime
 import pytz
+from .models import TrafficViolation
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -20,23 +21,9 @@ class CustomUserCreationForm(UserCreationForm):
         return user
     
 class ReportForm(forms.Form):
-    VIOLATIONS = [
-        ('紅線停車', '紅線停車'),
-        ('行駛人行道', '行駛人行道'),
-        ('未停讓行人', '未停讓行人'),
-        ('切換車道未打方向燈', '切換車道未打方向燈'),
-        ('人行道騎樓停車', '人行道騎樓停車'),
-        ('闖紅燈', '闖紅燈'),
-        ('逼車', '逼車'),
-        ('未禮讓直行車', '未禮讓直行車'),
-        ('未依標線行駛', '未依標線行駛'),
-        ('其他', '其他')
-    ]
-    STATUS = [
-        ('通過', '通過'),
-        ('未通過', '未通過'),
-        ('其他', '其他')
-    ]
+    VIOLATIONS = TrafficViolation.VIOLATIONS
+    STATUS = TrafficViolation.STATUS
+
     # 建立選項
     HOUR_CHOICES = [(i, f'{i:02}') for i in range(24)]
     MINUTE_CHOICES = [(i, f'{i:02}') for i in range(60)]
