@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login
 from .forms import CustomUserCreationForm
+from .forms import ReportForm
 
 def home(request):
     return render(request, 'reports/home.html')
@@ -31,4 +32,11 @@ def account_view(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'reports/dashboard.html')
+    if request.method == 'POST':
+        form = ReportForm(request.POST, request.FILES)
+        if form.is_valid():
+            # TODO: Save data to Azure SQL
+            pass
+    else:
+        form = ReportForm()
+    return render(request, 'reports/dashboard.html', {'form': form})
