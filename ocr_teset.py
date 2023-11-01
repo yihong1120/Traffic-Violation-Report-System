@@ -64,3 +64,33 @@ if full_address:
     print(f"Full Address: {full_address}")
 else:
     print("Postal code not found in the mapping.")
+
+
+
+def create_postal_code_mapping():
+    mapping = {
+        '100': '臺北市中正區',
+        '103': '臺北市大同區',
+        '104': '臺北市中山區',
+        '105': '臺北市松山區',
+        # ... add all other postal codes
+    }
+    return mapping
+
+def get_address(postal_code, street_address, mapping):
+    city_district = mapping.get(postal_code)
+    if city_district:
+        return city_district + street_address
+    else:
+        return None
+
+postal_code_mapping = create_postal_code_mapping()
+
+postal_code = '104'
+street_address = '學士路95號'
+full_address = get_address(postal_code, street_address, postal_code_mapping)
+
+if full_address:
+    print(f"Full Address: {full_address}")
+else:
+    print("Postal code not found in the mapping.")
