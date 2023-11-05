@@ -10,4 +10,14 @@
     <p>Please <a href="{% url 'login' %}">login</a> to continue.</p>
 {% endif %}
 
+<!-- Google Maps Embed -->
+<div id="map-container" style="height: 400px; width: 100%;">
+    <iframe
+        width="100%"
+        height="100%"
+        frameborder="0" style="border:0"
+        src="https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=23.6978,120.9605&zoom=8&maptype=roadmap" allowfullscreen>
+    </iframe>
+</div>
+
 {% endblock %}
