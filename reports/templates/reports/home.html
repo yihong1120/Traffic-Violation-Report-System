@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Welcome to Traffic Violation Report System</h2>
+
+{% if request.user.is_authenticated %}
+    <p>Hello, {{ request.user.username }}!</p>
+    <a href="{% url 'logout' %}">Logout</a>
+{% else %}
+    <p>Please <a href="{% url 'login' %}">login</a> to continue.</p>
+{% endif %}
+
+{% endblock %}
