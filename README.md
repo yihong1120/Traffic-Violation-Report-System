@@ -13,3 +13,4 @@ A platform for users to upload and share the responses from law enforcement agen
 - Deploy the server on Raspberry Pi 5 and establish nginx redirection of data on Ubuntu 22.04.
 - Procure a static domain from Chunghwa Telecom (CHT).
 - Register for Google Webmaster Tools
+- Hide the real static file path.
