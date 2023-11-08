@@ -35,7 +35,7 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
-            # TODO: Save data to Azure SQL
+            # TODO: Save data to MySQL and GCP MySQL
             pass
     else:
         form = ReportForm()
