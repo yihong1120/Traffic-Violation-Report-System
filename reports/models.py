@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 class TrafficViolation(models.Model):
     VIOLATIONS = [
@@ -30,3 +31,7 @@ class TrafficViolation(models.Model):
 class MediaFile(models.Model):
     traffic_violation = models.ForeignKey(TrafficViolation, on_delete=models.CASCADE)
     file = models.FileField(upload_to='media/')
+
+class MyUser(AbstractUser):
+    email_verified = models.BooleanField(default=False)
+    email_verified_code = models.CharField(max_length=6, null=True, blank=True)
