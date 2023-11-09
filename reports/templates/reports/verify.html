@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>驗證您的帳戶</h2>
+
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="code" placeholder="驗證碼">
+    <button type="submit">驗證</button>
+</form>
+{% endblock %}

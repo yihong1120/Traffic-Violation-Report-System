@@ -1,2 +1,5 @@
 Django==4.2.6
-django-multiupload==0.6.1
+django_multiupload==0.6.1
+numpy==1.26.1
+pytesseract==0.3.10
+pytz==2023.3.post1
