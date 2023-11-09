@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group, Permission
 
 class TrafficViolation(models.Model):
     VIOLATIONS = [
@@ -35,3 +35,21 @@ class MediaFile(models.Model):
 class MyUser(AbstractUser):
     email_verified = models.BooleanField(default=False)
     email_verified_code = models.CharField(max_length=6, null=True, blank=True)
+
+    # Override the groups field
+    groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="myuser_set",
+        related_query_name="user",
+        verbose_name='groups'
+    )
+
+    # Override the user_permissions field
+    user_permissions = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="myuser_set",
+        related_query_name="user",
+        verbose_name='user permissions'
+    )
