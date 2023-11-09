@@ -6,7 +6,9 @@ from django.contrib.auth import login
 from django.core.mail import send_mail
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
-from .models import MyUser
+from .models import UserProfile
+from django.contrib import messages
+
 import random
 
 def home(request):
@@ -25,40 +27,42 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-
-            # 生成驗證碼
+            user = form.save()  # 保存用戶模型實例
+            print("yes")
+            # 為新用戶創建UserProfile實例，並生成一個隨機驗證碼
             code = generate_random_code()
+            UserProfile.objects.create(user=user, email_verified_code=code)
 
-            # 發送驗證郵件
+            # 發送含有驗證碼的電子郵件
             send_mail(
-                subject="驗證台灣違規平台帳戶",
-                body="請點擊以下連結驗證您的帳戶：\n\nhttp://localhost:8000/verify/?code={code}".format(code=code),
+                subject="驗證您的帳戶",
+                message="您的驗證碼是：{code}".format(code=code),
                 from_email="trafficviolationtaiwan@gmail.com",
                 recipient_list=[user.email],
+                fail_silently=False,
             )
 
-            return redirect('verify')
+            # 重定向到驗證頁面
+            return redirect('verify')  # 確保你有一個名為'verify'的URL映射
     else:
         form = CustomUserCreationForm()
+    
     return render(request, 'reports/register.html', {'form': form})
 
 def verify(request):
     # 從 URL 中獲取驗證碼
     code = request.GET.get('code')
-
-    # 驗證驗證碼
     if not code:
         return render(request, 'reports/verify.html', {'error': '驗證碼無效'})
 
-    # 驗證成功，更新使用者狀態
-    if code == MyUser.objects.get(id=request.user.id).email_verified_code:
-        user = MyUser.objects.get(id=request.user.id)
-        user.email_verified = True
-        user.email_verified_code = None
-        user.save()
+    try:
+        # 獲取當前用戶的UserProfile
+        profile = UserProfile.objects.get(user=request.user, email_verified_code=code)
+        profile.email_verified = True
+        profile.email_verified_code = ''
+        profile.save()
         return redirect('login')
-    else:
+    except UserProfile.DoesNotExist:
         return render(request, 'reports/verify.html', {'error': '驗證碼錯誤'})
 
 @login_required
