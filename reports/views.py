@@ -50,20 +50,24 @@ def register(request):
     return render(request, 'reports/register.html', {'form': form})
 
 def verify(request):
-    # 從 URL 中獲取驗證碼
-    code = request.GET.get('code')
-    if not code:
-        return render(request, 'reports/verify.html', {'error': '驗證碼無效'})
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        if not code:
+            messages.error(request, '請輸入驗證碼。')
+            return render(request, 'reports/verify.html')
 
-    try:
-        # 獲取當前用戶的UserProfile
-        profile = UserProfile.objects.get(user=request.user, email_verified_code=code)
-        profile.email_verified = True
-        profile.email_verified_code = ''
-        profile.save()
-        return redirect('login')
-    except UserProfile.DoesNotExist:
-        return render(request, 'reports/verify.html', {'error': '驗證碼錯誤'})
+        try:
+            profile = UserProfile.objects.get(user=request.user, email_verified_code=code)
+            profile.email_verified = True
+            profile.email_verified_code = ''
+            profile.save()
+            messages.success(request, '您的帳戶已經成功驗證。')
+            return redirect('login')
+        except UserProfile.DoesNotExist:
+            messages.error(request, '驗證碼錯誤。')
+            return render(request, 'reports/verify.html')
+    else:
+        return render(request, 'reports/verify.html')
 
 @login_required
 def account_view(request):
