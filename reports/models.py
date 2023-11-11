@@ -27,6 +27,7 @@ class TrafficViolation(models.Model):
     status = models.CharField(max_length=50, choices=STATUS)
     location = models.CharField(max_length=255)
     officer = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    # officer = models.CharField(max_length=100, null=True, blank=True)
 
 class MediaFile(models.Model):
     traffic_violation = models.ForeignKey(TrafficViolation, on_delete=models.CASCADE)

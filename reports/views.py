@@ -7,6 +7,7 @@ from django.core.mail import send_mail
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
+from .models import TrafficViolation
 from django.contrib import messages
 import mysql.connector
 
@@ -79,29 +80,40 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
-            report = form.save(commit=False)  # 如果需要在保存前进一步处理数据
-            report.user = request.user  # 假设模型中有一个外键指向用户模型
-            report.save()  # 保存报告到数据库
+            # 创建一个新的 TrafficViolation 实例
+            traffic_violation = TrafficViolation(
+                license_plate=form.cleaned_data['license_plate'],
+                date=form.cleaned_data['date'],
+                time=form.cleaned_data['time'],  # 使用表单中清洗过的 time 字段
+                violation=form.cleaned_data['violation'],
+                status=form.cleaned_data['status'],
+                location=form.cleaned_data['location'],
+                # officer=form.cleaned_data['officer'],
+                officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
+                # media 字段将在模型的 save 方法中处理
+            )
+            # 保存 TrafficViolation 实例
+            traffic_violation.save()
 
             # TODO: 在这里添加将数据保存到 GCP MySQL 的逻辑
-            try:
-                conn = mysql.connector.connect(
-                    user='your_gcp_mysql_user',
-                    password='your_gcp_mysql_password',
-                    host='your_gcp_mysql_host',
-                    database='your_gcp_mysql_database'
-                )
-                cursor = conn.cursor()
-                # 编写适合您模型的SQL语句
-                insert_query = "INSERT INTO your_table (fields...) VALUES (%s, %s, ...)"
-                cursor.execute(insert_query, (report.field1, report.field2, ...))  # 根据实际情况调整
-                conn.commit()
-            except mysql.connector.Error as err:
-                messages.error(request, '保存到 GCP MySQL 失败: {}'.format(err))
-            finally:
-                if conn.is_connected():
-                    cursor.close()
-                    conn.close()
+            # try:
+            #     conn = mysql.connector.connect(
+            #         user='your_gcp_mysql_user',
+            #         password='your_gcp_mysql_password',
+            #         host='your_gcp_mysql_host',
+            #         database='your_gcp_mysql_database'
+            #     )
+            #     cursor = conn.cursor()
+            #     # 编写适合您模型的SQL语句
+            #     insert_query = "INSERT INTO your_table (fields...) VALUES (%s, %s, ...)"
+            #     cursor.execute(insert_query, (report.field1, report.field2, ...))  # 根据实际情况调整
+            #     conn.commit()
+            # except mysql.connector.Error as err:
+            #     messages.error(request, '保存到 GCP MySQL 失败: {}'.format(err))
+            # finally:
+            #     if conn.is_connected():
+            #         cursor.close()
+            #         conn.close()
 
             messages.success(request, '报告提交成功。')
             return redirect('dashboard')  # 重定向到dashboard页面或其他页面
