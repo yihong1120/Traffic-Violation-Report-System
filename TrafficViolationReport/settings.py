@@ -182,6 +182,9 @@ AUTHENTICATION_BACKENDS = (
 
 # LOGIN_REDIRECT_URL = '/'
 
+api_key = "GOOGLE_MAPS_API_KEY"  # 确保在settings.py中定义了这个变量
+GOOGLE_MAPS_API_KEY = 'your_google_maps_api_key'  # 从环境变量或安全的配置管理系统中获取
+
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'mssql',

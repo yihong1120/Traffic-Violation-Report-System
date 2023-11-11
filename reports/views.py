@@ -8,6 +8,7 @@ from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
 from django.contrib import messages
+import mysql.connector
 
 import random
 
@@ -78,8 +79,37 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
-            # TODO: Save data to MySQL and GCP MySQL
-            pass
+            report = form.save()  # 将数据保存到 Django 默认的数据库
+
+            # TODO: 这里添加将数据保存到 GCP MySQL 的代码
+            # 您需要根据您的情况来填写下面的连接参数
+            # 这个部分的代码只是一个框架，您需要实现实际的数据插入逻辑
+            try:
+                # 连接到 GCP MySQL 数据库
+                conn = mysql.connector.connect(
+                    user='your_gcp_mysql_user',
+                    password='your_gcp_mysql_password',
+                    host='your_gcp_mysql_host',
+                    database='your_gcp_mysql_database'
+                )
+                cursor = conn.cursor()
+
+                # 编写 SQL 插入命令，这需要根据您的数据模型来定制字段和表名
+                insert_query = "INSERT INTO your_table_name (field1, field2, ...) VALUES (%s, %s, ...)"
+                report_data = (report.field1, report.field2, ...)
+
+                cursor.execute(insert_query, report_data)
+                conn.commit()
+            except mysql.connector.Error as err:
+                messages.error(request, '保存到 GCP MySQL 失败: {}'.format(err))
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+            messages.success(request, '报告提交成功')
+            return redirect('some_success_url')  # 提交成功后的重定向
     else:
         form = ReportForm()
+
     return render(request, 'reports/dashboard.html', {'form': form})
