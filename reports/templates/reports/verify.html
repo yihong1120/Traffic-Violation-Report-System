@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>驗證您的帳戶</h2>
+
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">
+    {{ message }}
+</div>
+{% endfor %}
+
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="code" placeholder="請輸入您的驗證碼">
+    <button type="submit">驗證</button>
+</form>
+{% endblock %}

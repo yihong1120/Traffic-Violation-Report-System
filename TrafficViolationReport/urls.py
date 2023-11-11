@@ -25,8 +25,10 @@ urlpatterns = [
     # path('login/', LoginView.as_view(), name='login'),
     path('login/', report_views.login, name='login'),
     path('register/', report_views.register, name='register'),
+    path('verify/', report_views.verify, name='verify'),
     path('account/', report_views.account_view, name='account'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('', report_views.home, name='home'),
     path('dashboard/', report_views.dashboard, name='dashboard'),
+    path('accounts/', include('allauth.urls')),
 ]

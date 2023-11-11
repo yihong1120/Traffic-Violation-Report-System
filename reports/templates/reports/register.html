@@ -5,6 +5,22 @@
 
 <form method="post">
     {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <strong>错误:</strong> 请修正下列错误。
+    </div>
+    <ul>
+        {% for field in form %}
+            {% if field.errors %}
+                {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
     {{ form.as_p }}
     <button type="submit">Register</button>
 </form>
