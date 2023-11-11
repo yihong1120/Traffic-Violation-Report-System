@@ -1,3 +1,5 @@
 __pycache__
 __init__.py
 static/config.json
+.DS_Store
+static/config.json
