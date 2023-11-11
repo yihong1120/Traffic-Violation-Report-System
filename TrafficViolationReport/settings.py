@@ -11,16 +11,26 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import json
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# BASE_DIR is defined in settings.py as the path to the project's root directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Constructing the full path to the config.json file
+config_path = BASE_DIR / 'static' / 'config.json'
+
+# Opening the configuration file using the constructed path
+with open(config_path) as config_file:
+    config = json.load(config_file)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2&$ojghh1pz765s&1-s62tyc)_f+7&53x9!csx5rr2vn8j+dy*'
+SECRET_KEY = config.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("No 'SECRET_KEY' set in configuration.")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -141,13 +151,29 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
+# Email backend configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'trafficviolationtaiwan@gmail.com'
-EMAIL_HOST_PASSWORD = ''
+
+# Retrieving and validating the email host user from the configuration
+EMAIL_HOST_USER = config.get('EMAIL_HOST_USER')
+if not EMAIL_HOST_USER:
+    raise ValueError("No 'EMAIL_HOST_USER' has been set in the configuration.")
+
+# Retrieving and validating the email host password from the configuration
+EMAIL_HOST_PASSWORD = config.get('EMAIL_HOST_PASSWORD')
+if not EMAIL_HOST_PASSWORD:
+    raise ValueError("No 'EMAIL_HOST_PASSWORD' has been set in the configuration.")
+
+# Enabling TLS for email security
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'trafficviolationtaiwan@gmail.com'
+
+# Retrieving and validating the default sender email address from the configuration
+DEFAULT_FROM_EMAIL = config.get('DEFAULT_FROM_EMAIL')
+if not DEFAULT_FROM_EMAIL:
+    raise ValueError("No 'DEFAULT_FROM_EMAIL' has been set in the configuration.")
+
 
 # AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',]
 AUTHENTICATION_BACKENDS = (
