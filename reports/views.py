@@ -79,13 +79,12 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
-            report = form.save()  # 将数据保存到 Django 默认的数据库
+            report = form.save(commit=False)  # 如果需要在保存前进一步处理数据
+            report.user = request.user  # 假设模型中有一个外键指向用户模型
+            report.save()  # 保存报告到数据库
 
-            # TODO: 这里添加将数据保存到 GCP MySQL 的代码
-            # 您需要根据您的情况来填写下面的连接参数
-            # 这个部分的代码只是一个框架，您需要实现实际的数据插入逻辑
+            # TODO: 在这里添加将数据保存到 GCP MySQL 的逻辑
             try:
-                # 连接到 GCP MySQL 数据库
                 conn = mysql.connector.connect(
                     user='your_gcp_mysql_user',
                     password='your_gcp_mysql_password',
@@ -93,12 +92,9 @@ def dashboard(request):
                     database='your_gcp_mysql_database'
                 )
                 cursor = conn.cursor()
-
-                # 编写 SQL 插入命令，这需要根据您的数据模型来定制字段和表名
-                insert_query = "INSERT INTO your_table_name (field1, field2, ...) VALUES (%s, %s, ...)"
-                report_data = (report.field1, report.field2, ...)
-
-                cursor.execute(insert_query, report_data)
+                # 编写适合您模型的SQL语句
+                insert_query = "INSERT INTO your_table (fields...) VALUES (%s, %s, ...)"
+                cursor.execute(insert_query, (report.field1, report.field2, ...))  # 根据实际情况调整
                 conn.commit()
             except mysql.connector.Error as err:
                 messages.error(request, '保存到 GCP MySQL 失败: {}'.format(err))
@@ -107,9 +103,9 @@ def dashboard(request):
                     cursor.close()
                     conn.close()
 
-            messages.success(request, '报告提交成功')
-            return redirect('some_success_url')  # 提交成功后的重定向
+            messages.success(request, '报告提交成功。')
+            return redirect('dashboard')  # 重定向到dashboard页面或其他页面
     else:
-        form = ReportForm()
+        form = ReportForm()  # 如果不是POST请求，则创建一个空表单
 
     return render(request, 'reports/dashboard.html', {'form': form})
