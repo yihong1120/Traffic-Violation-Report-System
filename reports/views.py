@@ -7,8 +7,8 @@ from django.core.mail import send_mail
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
+from .models import TrafficViolation, MediaFile
 from django.contrib import messages
-
 import random
 
 def home(request):
@@ -78,8 +78,54 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
-            # TODO: Save data to MySQL and GCP MySQL
-            pass
+            # 创建一个新的 TrafficViolation 实例
+            traffic_violation = TrafficViolation(
+                license_plate=form.cleaned_data['license_plate'],
+                date=form.cleaned_data['date'],
+                time=form.cleaned_data['time'],  # 使用表单中清洗过的 time 字段
+                violation=form.cleaned_data['violation'],
+                status=form.cleaned_data['status'],
+                location=form.cleaned_data['location'],
+                # officer=form.cleaned_data['officer'],
+                officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
+                # media 字段将在模型的 save 方法中处理
+            )
+            # 保存 TrafficViolation 实例
+            traffic_violation.save()
+
+            # Now handle file uploads
+            for file in request.FILES.getlist('media'):
+                # Create a new instance of a model that handles the media files
+                # This model should have a ForeignKey to `TrafficViolation` and a FileField
+                media_instance = MediaFile(
+                    traffic_violation=traffic_violation,
+                    file=file
+                )
+                media_instance.save()
+
+            # TODO: 在这里添加将数据保存到 GCP MySQL 的逻辑
+            # try:
+            #     conn = mysql.connector.connect(
+            #         user='your_gcp_mysql_user',
+            #         password='your_gcp_mysql_password',
+            #         host='your_gcp_mysql_host',
+            #         database='your_gcp_mysql_database'
+            #     )
+            #     cursor = conn.cursor()
+            #     # 编写适合您模型的SQL语句
+            #     insert_query = "INSERT INTO your_table (fields...) VALUES (%s, %s, ...)"
+            #     cursor.execute(insert_query, (report.field1, report.field2, ...))  # 根据实际情况调整
+            #     conn.commit()
+            # except mysql.connector.Error as err:
+            #     messages.error(request, '保存到 GCP MySQL 失败: {}'.format(err))
+            # finally:
+            #     if conn.is_connected():
+            #         cursor.close()
+            #         conn.close()
+
+            messages.success(request, '报告提交成功。')
+            return redirect('dashboard')  # 重定向到dashboard页面或其他页面
     else:
-        form = ReportForm()
+        form = ReportForm()  # 如果不是POST请求，则创建一个空表单
+
     return render(request, 'reports/dashboard.html', {'form': form})
