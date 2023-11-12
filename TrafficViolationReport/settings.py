@@ -31,14 +31,12 @@ SECRET_KEY = config.get('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("No 'SECRET_KEY' set in configuration.")
 
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -88,7 +86,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'TrafficViolationReport.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -98,7 +95,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -124,7 +120,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-# TIME_ZONE = 'UTC'
 TIME_ZONE = 'Asia/Taipei'
 
 USE_I18N = True
@@ -173,29 +168,22 @@ DEFAULT_FROM_EMAIL = config.get('DEFAULT_FROM_EMAIL')
 if not DEFAULT_FROM_EMAIL:
     raise ValueError("No 'DEFAULT_FROM_EMAIL' has been set in the configuration.")
 
-
 # AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',]
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-# LOGIN_REDIRECT_URL = '/'
-
 api_key = "GOOGLE_MAPS_API_KEY"  # 确保在settings.py中定义了这个变量
 GOOGLE_MAPS_API_KEY = 'your_google_maps_api_key'  # 从环境变量或安全的配置管理系统中获取
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'mssql',
-#         'NAME': 'mydb',
-#         'USER': 'myuser',
-#         'PASSWORD': 'mypassword',
-#         'HOST': 'myhost',
-#         'PORT': '',
-
-#         'OPTIONS': {
-#             'driver': 'ODBC Driver 18 for SQL Server',
-#         },
-#     },
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config.get('DATABASE_NAME'),
+        'USER': config.get('DATABASE_USER'),
+        'PASSWORD': config.get('DATABASE_PASSWORD'),
+        'HOST': config.get('DATABASE_HOST'),
+        'PORT': config.get('DATABASE_PORT'),
+    }
+}

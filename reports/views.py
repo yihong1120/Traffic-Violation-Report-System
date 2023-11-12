@@ -9,9 +9,6 @@ from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
 from django.contrib import messages
-from django.core.files.base import ContentFile
-import mysql.connector
-
 import random
 
 def home(request):

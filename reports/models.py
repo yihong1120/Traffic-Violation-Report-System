@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+import uuid
+import os
+from django.utils.deconstruct import deconstructible
 
 class TrafficViolation(models.Model):
     VIOLATIONS = [
@@ -29,9 +32,22 @@ class TrafficViolation(models.Model):
     officer = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
     # officer = models.CharField(max_length=100, null=True, blank=True)
 
+@deconstructible
+class PathAndRename(object):
+    def __init__(self, sub_path):
+        self.sub_path = sub_path
+
+    def __call__(self, instance, filename):
+        ext = filename.split('.')[-1]
+        # 設定新文件名稱為 UUID
+        filename = '{}.{}'.format(uuid.uuid4(), ext)
+        # 返回包含新路徑的文件名稱
+        return os.path.join(self.sub_path, filename)
+
+# 在模型中使用 PathAndRename 來處理 'upload_to'
 class MediaFile(models.Model):
     traffic_violation = models.ForeignKey(TrafficViolation, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='media/')
+    file = models.FileField(upload_to = PathAndRename('media/'))
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
