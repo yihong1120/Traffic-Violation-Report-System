@@ -7,8 +7,9 @@ from django.core.mail import send_mail
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
-from .models import TrafficViolation
+from .models import TrafficViolation, MediaFile
 from django.contrib import messages
+from django.core.files.base import ContentFile
 import mysql.connector
 
 import random
@@ -94,6 +95,16 @@ def dashboard(request):
             )
             # 保存 TrafficViolation 实例
             traffic_violation.save()
+
+            # Now handle file uploads
+            for file in request.FILES.getlist('media'):
+                # Create a new instance of a model that handles the media files
+                # This model should have a ForeignKey to `TrafficViolation` and a FileField
+                media_instance = MediaFile(
+                    traffic_violation=traffic_violation,
+                    file=file
+                )
+                media_instance.save()
 
             # TODO: 在这里添加将数据保存到 GCP MySQL 的逻辑
             # try:
