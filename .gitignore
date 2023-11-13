@@ -3,3 +3,5 @@ __init__.py
 static/config.json
 .DS_Store
 media
+pivotal-equinox-404812-6722b643b8f4.json
+db.sqlite3
