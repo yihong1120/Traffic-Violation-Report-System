@@ -179,11 +179,21 @@ GOOGLE_MAPS_API_KEY = 'your_google_maps_api_key'  # 从环境变量或安全的�
 
 DATABASES = {
     'default': {
+        # 您现有的本地数据库配置
         'ENGINE': 'django.db.backends.mysql',
         'NAME': config.get('DATABASE_NAME'),
         'USER': config.get('DATABASE_USER'),
         'PASSWORD': config.get('DATABASE_PASSWORD'),
         'HOST': config.get('DATABASE_HOST'),
         'PORT': config.get('DATABASE_PORT'),
+    },
+    'gcp': {
+        # GCP MySQL数据库的配置
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config.get('GCP_DATABASE_NAME'),
+        'USER': config.get('GCP_DATABASE_USER'),
+        'PASSWORD': config.get('GCP_DATABASE_PASSWORD'),
+        'HOST': config.get('GCP_DATABASE_HOST'),
+        'PORT': config.get('GCP_DATABASE_PORT'),
     }
 }

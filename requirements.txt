@@ -5,3 +5,4 @@ pytesseract==0.3.10
 pytz==2023.3.post1
 django-allauth==0.58.2
 mysqlclient==2.2.0
+google-cloud-bigquery==3.13.0
