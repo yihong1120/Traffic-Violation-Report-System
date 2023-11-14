@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login
 from django.core.mail import send_mail
+from django.conf import settings
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
@@ -13,26 +14,10 @@ import random
 from google.cloud import bigquery
 import googlemaps
 import os, re
-from pathlib import Path
-import json
-
-# BASE_DIR is defined in settings.py as the path to the project's root directory
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Constructing the full path to the config.json file
-config_path = BASE_DIR / 'static' / 'config.json'
-
-# Opening the configuration file using the constructed path
-with open(config_path) as config_file:
-    config = json.load(config_file)
-
-# SECURITY WARNING: keep the secret key used in production secret!
-GoogleMaps_API_KEY = config.get('GoogleMaps_API_KEY')
-if not GoogleMaps_API_KEY:
-    raise ValueError("No 'GoogleMaps_API_KEY' set in configuration.")
 
 def home(request):
-    return render(request, 'reports/home.html')
+    context = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY}
+    return render(request, 'reports/home.html', context)
 
 def login(request, *args, **kwargs):
     # 如果用戶已登入，重定向到首頁
@@ -95,7 +80,7 @@ def is_address(address):
 
 def get_latitude_and_longitude(address):
     if is_address(address):
-        gmaps = googlemaps.Client(key=GoogleMaps_API_KEY)
+        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
         geocode_result = gmaps.geocode(address)
 
         # Check if geocode_result is not empty
