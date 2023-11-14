@@ -11,7 +11,25 @@ from .models import TrafficViolation, MediaFile
 from django.contrib import messages
 import random
 from google.cloud import bigquery
-import os
+import googlemaps
+import os, re
+from pathlib import Path
+import json
+
+# BASE_DIR is defined in settings.py as the path to the project's root directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Constructing the full path to the config.json file
+config_path = BASE_DIR / 'static' / 'config.json'
+
+# Opening the configuration file using the constructed path
+with open(config_path) as config_file:
+    config = json.load(config_file)
+
+# SECURITY WARNING: keep the secret key used in production secret!
+GoogleMaps_API_KEY = config.get('GoogleMaps_API_KEY')
+if not GoogleMaps_API_KEY:
+    raise ValueError("No 'GoogleMaps_API_KEY' set in configuration.")
 
 def home(request):
     return render(request, 'reports/home.html')
@@ -71,6 +89,32 @@ def verify(request):
     else:
         return render(request, 'reports/verify.html')
 
+def is_address(address):
+    pattern = re.compile(r"[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]-[0-9]+")
+    return pattern.search(address)
+
+def get_latitude_and_longitude(address):
+    if is_address(address):
+        gmaps = googlemaps.Client(key=GoogleMaps_API_KEY)
+        geocode_result = gmaps.geocode(address)
+
+        # Check if geocode_result is not empty
+        if not geocode_result:
+            return None, None
+
+        # Access the first element of the list and then the 'location' key
+        location = geocode_result[0]['geometry']['location']
+        return location['lng'], location['lat']
+    else:
+        return None, None
+
+def process_input(input_string):
+    lat, lng = get_latitude_and_longitude(input_string)
+    if lat is not None and lng is not None:
+        return f"{lng},{lat}"
+    else:
+        return input_string
+
 @login_required
 def account_view(request):
     return render(request, 'reports/account.html', {'user': request.user})
@@ -87,7 +131,7 @@ def dashboard(request):
                 time=form.cleaned_data['time'],  # 使用表单中清洗过的 time 字段
                 violation=form.cleaned_data['violation'],
                 status=form.cleaned_data['status'],
-                location=form.cleaned_data['location'],
+                location=process_input(form.cleaned_data['location']),
                 officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
                 # media 字段将在模型的 save 方法中处理
             )
