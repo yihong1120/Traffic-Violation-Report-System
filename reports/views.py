@@ -5,6 +5,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth import login
 from django.core.mail import send_mail
 from django.contrib import messages
+from django.http import JsonResponse
 from django.conf import settings
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
@@ -13,7 +14,6 @@ from .models import TrafficViolation, MediaFile
 from .utils import is_address, get_latitude_and_longitude, process_input
 import random
 from google.cloud import bigquery
-from django.http import JsonResponse
 from .bigquery_utils import get_traffic_violations, save_to_bigquery
 
 def get_traffic_violation_view(request):
