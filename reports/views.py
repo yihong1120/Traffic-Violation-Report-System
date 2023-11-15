@@ -11,7 +11,7 @@ from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
-from .utils import is_address, get_latitude_and_longitude, process_input
+from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
 import random
 from google.cloud import bigquery
 from .bigquery_utils import get_traffic_violations, save_to_bigquery
@@ -29,9 +29,6 @@ def login(request, *args, **kwargs):
     if request.user.is_authenticated:
         return redirect('home')
     return LoginView.as_view()(request, *args, **kwargs)
-
-def generate_random_code():
-    return ''.join(random.choice('0123456789') for _ in range(6))
 
 def register(request):
     if request.method == 'POST':

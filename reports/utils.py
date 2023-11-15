@@ -2,6 +2,9 @@ import re
 import googlemaps
 from django.conf import settings
 
+def generate_random_code():
+    return ''.join(random.choice('0123456789') for _ in range(6))
+
 def is_address(address):
     pattern = re.compile(r"[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]-[0-9]+")
     return pattern.search(address)
