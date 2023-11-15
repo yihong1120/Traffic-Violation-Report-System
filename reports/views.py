@@ -10,12 +10,11 @@ from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
+from .utils import is_address, get_latitude_and_longitude, process_input
 import random
 from google.cloud import bigquery
 from django.http import JsonResponse
 from .bigquery_utils import get_traffic_violations, save_to_bigquery
-import googlemaps
-import os, re
 
 def get_traffic_violation_view(request):
     data = get_traffic_violations()
@@ -79,32 +78,6 @@ def verify(request):
             return render(request, 'reports/verify.html')
     else:
         return render(request, 'reports/verify.html')
-
-def is_address(address):
-    pattern = re.compile(r"[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]-[0-9]+")
-    return pattern.search(address)
-
-def get_latitude_and_longitude(address):
-    if is_address(address):
-        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
-        geocode_result = gmaps.geocode(address)
-
-        # Check if geocode_result is not empty
-        if not geocode_result:
-            return None, None
-
-        # Access the first element of the list and then the 'location' key
-        location = geocode_result[0]['geometry']['location']
-        return location['lng'], location['lat']
-    else:
-        return None, None
-
-def process_input(input_string):
-    lat, lng = get_latitude_and_longitude(input_string)
-    if lat is not None and lng is not None:
-        return f"{lng},{lat}"
-    else:
-        return input_string
 
 @login_required
 def account_view(request):
