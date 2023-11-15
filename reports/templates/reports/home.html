@@ -21,22 +21,35 @@
             zoom: 8,
             mapTypeId: 'roadmap'
         });
-    
-        // 使用 AJAX 请求违章数据
+
         fetch('/traffic-violations/')
-            .then(response => response.json())
-            .then(data => {
-                // 用数据创建地图上的标记
-                for (var i = 0; i < data.length; i++) {
-                    var marker = new google.maps.Marker({
-                        position: {lat: data[i].lat, lng: data[i].lng},
-                        map: map,
-                        title: data[i].title
-                    });
-                }
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(function(item) {
+                var marker = new google.maps.Marker({
+                    position: {lat: item.lat, lng: item.lng},
+                    map: map,
+                    title: item.title
+                });
+
+                var imageSrc = item.media ? '/' + item.media : getRandomErrorImage();
+                var infowindowContent = '<div><strong>' + item.title + '</strong><br>' +
+                                        '<img src="' + imageSrc + '" style="width: 150px;" onerror="this.onerror=null;this.src=getRandomErrorImage();"><br>' +
+                                        '其他信息或描述</div>';
+
+                var infowindow = new google.maps.InfoWindow({
+                    content: infowindowContent
+                });
+
+                marker.addListener('click', function() {
+                    infowindow.open(map, marker);
+                });
             });
+        });
     }
 </script>
+
+
 
 <!-- 引入 Google Maps API -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>

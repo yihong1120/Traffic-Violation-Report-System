@@ -130,6 +130,7 @@ def dashboard(request):
             traffic_violation.save()
 
             # Now handle file uploads
+            media_instances = []
             for file in request.FILES.getlist('media'):
                 # Create a new instance of a model that handles the media files
                 # This model should have a ForeignKey to `TrafficViolation` and a FileField
@@ -138,9 +139,10 @@ def dashboard(request):
                     file=file
                 )
                 media_instance.save()
+                media_instances.append(media_instance)
 
             # Insert the data from form into BigQuery
-            save_to_bigquery(traffic_violation)
+            save_to_bigquery(traffic_violation, media_instances)
 
             messages.success(request, '报告提交成功。')
             return redirect('dashboard')  # 重定向到dashboard页面或其他页面

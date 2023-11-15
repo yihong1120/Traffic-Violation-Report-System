@@ -4,10 +4,23 @@ from google.cloud import bigquery
 def get_traffic_violations(request):
     client = bigquery.Client()
     query = """
-    SELECT license_plate, date, time, violation, status, location, officer
-    FROM traffic_violation_db.reports_trafficviolation
+    SELECT 
+        v.license_plate, 
+        v.date, 
+        v.time, 
+        v.violation, 
+        v.status, 
+        v.location, 
+        v.officer,
+        v.traffic_violation_id,
+        m.file
+    FROM 
+        `traffic_violation_db.reports_trafficviolation` v
+    LEFT JOIN 
+        `traffic_violation_db.reports_mediafile` m ON v.traffic_violation_id = m.traffic_violation_id
     """
     query_job = client.query(query)
+
     results = query_job.result()
 
     data = []
@@ -16,25 +29,24 @@ def get_traffic_violations(request):
         data.append({
             'lat': lat,
             'lng': lng,
-            'title': f'{row.license_plate} - {row.violation}'
+            'title': f'{row.license_plate} - {row.violation}',
+            'media': row.file if row.file else 'path/to/default/image.jpg'
         })
-    
+
+    # return data
     return JsonResponse(data, safe=False) 
 
-def save_to_bigquery(traffic_violation):
+def save_to_bigquery(traffic_violation, media_files):
     client = bigquery.Client()
 
-    # 指定你的 dataset ID 和 table ID
+    # 指定 dataset ID 和 table ID
     project_id = "pivotal-equinox-404812"
     dataset_id = "traffic_violation_db"
-    table_id = "reports_trafficviolation"
+    table_id_violation = "reports_trafficviolation"
+    table_id_media = "reports_mediafile"
 
-    dataset_ref = client.dataset(dataset_id, project=project_id)
-    table_ref = dataset_ref.table(table_id)
-
-    table = client.get_table(table_ref)  # API 请求
-
-    rows_to_insert = [
+    # 准备要插入的违章数据
+    rows_to_insert_violation = [
         {
             "license_plate": traffic_violation.license_plate,
             "date": traffic_violation.date.strftime("%Y-%m-%d"),
@@ -43,13 +55,27 @@ def save_to_bigquery(traffic_violation):
             "status": traffic_violation.status,
             "location": traffic_violation.location,
             "officer": traffic_violation.officer.username if traffic_violation.officer else None,
+            "traffic_violation_id": traffic_violation.id,
         },
-        # 可以添加更多的行
     ]
 
-    errors = client.insert_rows_json(table, rows_to_insert)
+    # 插入违章数据
+    dataset_ref = client.dataset(dataset_id, project=project_id)
+    table_ref_violation = dataset_ref.table(table_id_violation)
+    table_violation = client.get_table(table_ref_violation)
+    client.insert_rows_json(table_violation, rows_to_insert_violation)
 
-    if errors != []:
-        print("Errors occurred:", errors)
-    else:
-        print("New rows have been added.")
+    # 准备要插入的媒体文件数据
+    rows_to_insert_media = [
+        {
+            "traffic_violation_id": traffic_violation.id,
+            "file": media_file.file.name,
+            # 其他需要的字段
+        }
+        for media_file in media_files
+    ]
+
+    # 插入媒体文件数据
+    table_ref_media = dataset_ref.table(table_id_media)
+    table_media = client.get_table(table_ref_media)
+    client.insert_rows_json(table_media, rows_to_insert_media)
