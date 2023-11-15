@@ -4,16 +4,22 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login
 from django.core.mail import send_mail
+from django.contrib import messages
 from django.conf import settings
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
-from django.contrib import messages
 import random
 from google.cloud import bigquery
+from django.http import JsonResponse
+from .bigquery_utils import get_traffic_violations, save_to_bigquery
 import googlemaps
 import os, re
+
+def get_traffic_violation_view(request):
+    data = get_traffic_violations()
+    return JsonResponse(data, safe=False)
 
 def home(request):
     context = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY}
@@ -133,46 +139,8 @@ def dashboard(request):
                 )
                 media_instance.save()
 
-            # 指定你的服务帐户文件路径
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "static/pivotal-equinox-404812-6722b643b8f4.json"
-
-            # 创建 BigQuery 客户端
-            client = bigquery.Client()
-
-            # 指定你的 dataset ID 和 table ID
-            project_id = "pivotal-equinox-404812"
-            dataset_id = "traffic_violation_db"
-            table_id = "reports_trafficviolation"
-
-            # 创建 Dataset 和 Table 的引用
-            dataset_ref = client.dataset(dataset_id, project=project_id)
-            table_ref = dataset_ref.table(table_id)
-
-            # 获取 Table 对象
-            table = client.get_table(table_ref)  # API 请求
-
-            # 准备要插入的数据
-            rows_to_insert = [
-                {
-                    "license_plate": traffic_violation.license_plate,
-                    "date": traffic_violation.date.strftime("%Y-%m-%d"),  # 格式化日期为字符串
-                    "time": traffic_violation.time.strftime("%H:%M:%S"),  # 格式化时间为字符串
-                    "violation": traffic_violation.violation,
-                    "status": traffic_violation.status,
-                    "location": traffic_violation.location,
-                    "officer": traffic_violation.officer.username if traffic_violation.officer else None,  # 使用 officer 的用户名或 None
-                },
-                # 可以添加更多的行
-            ]
-
-            # 使用 insert_rows_json 方法插入数据
-            errors = client.insert_rows_json(table, rows_to_insert)
-
-            # 检查有没有发生错误
-            if errors == []:
-                print("New rows have been added.")
-            else:
-                print("Errors occurred:", errors)
+            # Insert the data from form into BigQuery
+            save_to_bigquery(traffic_violation)
 
             messages.success(request, '报告提交成功。')
             return redirect('dashboard')  # 重定向到dashboard页面或其他页面

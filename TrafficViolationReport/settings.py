@@ -1,8 +1,12 @@
 from pathlib import Path
 import json
+import os
 
 # Define the base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Construct the full path to the pivotal-equinox-404812-6722b643b8f4.json file
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(BASE_DIR, 'static', 'pivotal-equinox-404812-6722b643b8f4.json')
 
 # Construct the full path to the config.json file
 config_path = BASE_DIR / 'static' / 'config.json'

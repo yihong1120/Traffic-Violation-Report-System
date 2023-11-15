@@ -15,32 +15,27 @@
 </div>
 
 <script>
-function initMap() {
-    var map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: 23.6978, lng: 120.9605},
-        zoom: 8,
-        mapTypeId: 'roadmap'
-    });
-
-    // BigQuery 数据
-    var data = [
-        {
-            lat: 24.1548216,
-            lng: 120.6822014,
-            title: 'Traffic Violation',
-        },
-        // Add more data points as needed
-    ];
-
-    // 标记地图上的位置
-    for (var i = 0; i < data.length; i++) {
-        var marker = new google.maps.Marker({
-            position: {lat: data[i].lat, lng: data[i].lng},
-            map: map,
-            title: data[i].title
+    function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 23.6978, lng: 120.9605},
+            zoom: 8,
+            mapTypeId: 'roadmap'
         });
+    
+        // 使用 AJAX 请求违章数据
+        fetch('/traffic-violations/')
+            .then(response => response.json())
+            .then(data => {
+                // 用数据创建地图上的标记
+                for (var i = 0; i < data.length; i++) {
+                    var marker = new google.maps.Marker({
+                        position: {lat: data[i].lat, lng: data[i].lng},
+                        map: map,
+                        title: data[i].title
+                    });
+                }
+            });
     }
-}
 </script>
 
 <!-- 引入 Google Maps API -->

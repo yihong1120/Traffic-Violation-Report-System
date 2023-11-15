@@ -22,6 +22,7 @@ from django.contrib.auth.views import LoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('traffic-violations/', report_views.get_traffic_violations, name='get_traffic_violations'),
     # path('login/', LoginView.as_view(), name='login'),
     path('login/', report_views.login, name='login'),
     path('register/', report_views.register, name='register'),
