@@ -15,33 +15,41 @@
 </div>
 
 <script>
-function initMap() {
-    var map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: 23.6978, lng: 120.9605},
-        zoom: 8,
-        mapTypeId: 'roadmap'
-    });
+    function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 23.6978, lng: 120.9605},
+            zoom: 8,
+            mapTypeId: 'roadmap'
+        });
 
-    // BigQuery 数据
-    var data = [
-        {
-            lat: 24.1548216,
-            lng: 120.6822014,
-            title: 'Traffic Violation',
-        },
-        // Add more data points as needed
-    ];
+        fetch('/traffic-violations/')
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(function(item) {
+                var marker = new google.maps.Marker({
+                    position: {lat: item.lat, lng: item.lng},
+                    map: map,
+                    title: item.title
+                });
 
-    // 标记地图上的位置
-    for (var i = 0; i < data.length; i++) {
-        var marker = new google.maps.Marker({
-            position: {lat: data[i].lat, lng: data[i].lng},
-            map: map,
-            title: data[i].title
+                var imageSrc = item.media ? '/' + item.media : getRandomErrorImage();
+                var infowindowContent = '<div><strong>' + item.title + '</strong><br>' +
+                                        '<img src="' + imageSrc + '" style="width: 150px;" onerror="this.onerror=null;this.src=getRandomErrorImage();"><br>' +
+                                        '其他信息或描述</div>';
+
+                var infowindow = new google.maps.InfoWindow({
+                    content: infowindowContent
+                });
+
+                marker.addListener('click', function() {
+                    infowindow.open(map, marker);
+                });
+            });
         });
     }
-}
 </script>
+
+
 
 <!-- 引入 Google Maps API -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>

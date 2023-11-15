@@ -19,9 +19,12 @@ from django.urls import path, include
 from reports import views as report_views
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.views import LoginView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('traffic-violations/', report_views.get_traffic_violations, name='get_traffic_violations'),
     # path('login/', LoginView.as_view(), name='login'),
     path('login/', report_views.login, name='login'),
     path('register/', report_views.register, name='register'),
@@ -32,3 +35,7 @@ urlpatterns = [
     path('', report_views.home, name='home'),
     path('dashboard/', report_views.dashboard, name='dashboard'),
 ]
+
+# 在开发环境中服务媒体文件
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
