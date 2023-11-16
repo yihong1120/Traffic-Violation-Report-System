@@ -2,20 +2,55 @@ from typing import List, Dict
 from django.http import JsonResponse, HttpRequest
 from google.cloud import bigquery
 
-def get_traffic_violations(request: HttpRequest) -> JsonResponse:
+def get_traffic_violation_markers(request: HttpRequest) -> JsonResponse:
     """
-    Query traffic violation data from BigQuery and return as JSON.
+    Get traffic violation markers from BigQuery and return as JSON.
 
     Args:
-        request (HttpRequest): The incoming request.
+        request (HttpRequest): The incoming HTTP request.
 
     Returns:
-        JsonResponse: The JSON response containing the traffic violation data.
+        JsonResponse: The JSON response containing traffic violation markers.
     """
-    # Instantiate a BigQuery client.
+    # Create a BigQuery client.
     client = bigquery.Client()
+    
+    # Define the SQL query to retrieve traffic violation markers.
+    query = """
+    SELECT traffic_violation_id, location
+    FROM `traffic_violation_db.reports_trafficviolation`
+    """
+    
+    # Execute the query.
+    query_job = client.query(query)
+    results = query_job.result()
 
-    # Define the SQL query.
+    data = []
+    for row in results:
+        lat, lng = map(float, row.location.split(','))
+        data.append({
+            'lat': lat,
+            'lng': lng,
+            'traffic_violation_id': row.traffic_violation_id
+        })
+
+    return JsonResponse(data, safe=False)
+
+def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: int) -> JsonResponse:
+    """
+    Get details of a traffic violation from BigQuery and return as JSON.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        traffic_violation_id (int): The ID of the traffic violation to retrieve details for.
+
+    Returns:
+        JsonResponse: The JSON response containing traffic violation details.
+    """
+    # Create a BigQuery client.
+    client = bigquery.Client()
+    
+    # Define the SQL query to retrieve traffic violation details based on ID.
     query = """
     SELECT 
         v.license_plate, 
@@ -31,27 +66,33 @@ def get_traffic_violations(request: HttpRequest) -> JsonResponse:
         `traffic_violation_db.reports_trafficviolation` v
     LEFT JOIN 
         `traffic_violation_db.reports_mediafile` m ON v.traffic_violation_id = m.traffic_violation_id
+    WHERE 
+        v.traffic_violation_id = @violation_id
     """
     
+    # Configure the query with a parameter for the traffic violation ID.
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("violation_id", "INT64", traffic_violation_id)
+        ]
+    )
+    
     # Execute the query.
-    query_job = client.query(query)
+    query_job = client.query(query, job_config=job_config)
+    result = query_job.result()
 
-    # Get the query results.
-    results = query_job.result()
+    # Process the query result.
+    row = list(result)[0]
+    lat, lng = map(float, row.location.split(','))
 
-    # Prepare the data for the JSON response.
-    data = []
-    for row in results:
-        lat, lng = map(float, row.location.split(','))
-        data.append({
-            'lat': lat,
-            'lng': lng,
-            'title': f'{row.license_plate} - {row.violation}',
-            'media': row.file if row.file else 'path/to/default/image.jpg'
-        })
+    data = {
+        'lat': lat,
+        'lng': lng,
+        'title': f'{row.license_plate} - {row.violation}',
+        'media': row.file if row.file else 'path/to/default/image.jpg'
+    }
 
-    # Return the data as a JSON response.
-    return JsonResponse(data, safe=False) 
+    return JsonResponse(data)
 
 def save_to_bigquery(traffic_violation: 'TrafficViolation', media_files: List['MediaFile']) -> None:
     """

@@ -14,11 +14,15 @@ from .models import TrafficViolation, MediaFile
 from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
 import random
 from google.cloud import bigquery
-from .bigquery_utils import get_traffic_violations, save_to_bigquery
+from .bigquery_utils import get_traffic_violation_markers, get_traffic_violation_details, save_to_bigquery
 
-def get_traffic_violation_view(request):
-    data = get_traffic_violations()
+def traffic_violation_markers_view(request):
+    data = get_traffic_violation_markers()
     return JsonResponse(data, safe=False)
+
+def traffic_violation_details_view(request, traffic_violation_id):
+    data = get_traffic_violation_details(traffic_violation_id)
+    return JsonResponse(data)
 
 def home(request):
     context = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY}
