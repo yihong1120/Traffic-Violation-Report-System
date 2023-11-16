@@ -24,7 +24,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('traffic-violations/', report_views.get_traffic_violations, name='get_traffic_violations'),
+    path('traffic-violation-markers/', report_views.get_traffic_violation_markers, name='traffic-violation-markers'),
+    path('traffic-violation-details/<int:traffic_violation_id>/', report_views.get_traffic_violation_details, name='traffic-violation-details'),
     # path('login/', LoginView.as_view(), name='login'),
     path('login/', report_views.login, name='login'),
     path('register/', report_views.register, name='register'),

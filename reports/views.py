@@ -5,21 +5,24 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth import login
 from django.core.mail import send_mail
 from django.contrib import messages
+from django.http import JsonResponse
 from django.conf import settings
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
+from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
 import random
 from google.cloud import bigquery
-from django.http import JsonResponse
-from .bigquery_utils import get_traffic_violations, save_to_bigquery
-import googlemaps
-import os, re
+from .bigquery_utils import get_traffic_violation_markers, get_traffic_violation_details, save_to_bigquery
 
-def get_traffic_violation_view(request):
-    data = get_traffic_violations()
+def traffic_violation_markers_view(request):
+    data = get_traffic_violation_markers()
     return JsonResponse(data, safe=False)
+
+def traffic_violation_details_view(request, traffic_violation_id):
+    data = get_traffic_violation_details(traffic_violation_id)
+    return JsonResponse(data)
 
 def home(request):
     context = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY}
@@ -30,9 +33,6 @@ def login(request, *args, **kwargs):
     if request.user.is_authenticated:
         return redirect('home')
     return LoginView.as_view()(request, *args, **kwargs)
-
-def generate_random_code():
-    return ''.join(random.choice('0123456789') for _ in range(6))
 
 def register(request):
     if request.method == 'POST':
@@ -79,32 +79,6 @@ def verify(request):
             return render(request, 'reports/verify.html')
     else:
         return render(request, 'reports/verify.html')
-
-def is_address(address):
-    pattern = re.compile(r"[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]|[0-9]+[街道|路|巷|弄|號|樓|室|樓層|棟|單元|號|樓|室|房間|門牌|鄉鎮市區|區|縣市|省]-[0-9]+")
-    return pattern.search(address)
-
-def get_latitude_and_longitude(address):
-    if is_address(address):
-        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
-        geocode_result = gmaps.geocode(address)
-
-        # Check if geocode_result is not empty
-        if not geocode_result:
-            return None, None
-
-        # Access the first element of the list and then the 'location' key
-        location = geocode_result[0]['geometry']['location']
-        return location['lng'], location['lat']
-    else:
-        return None, None
-
-def process_input(input_string):
-    lat, lng = get_latitude_and_longitude(input_string)
-    if lat is not None and lng is not None:
-        return f"{lng},{lat}"
-    else:
-        return input_string
 
 @login_required
 def account_view(request):

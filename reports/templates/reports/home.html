@@ -22,27 +22,31 @@
             mapTypeId: 'roadmap'
         });
 
-        fetch('/traffic-violations/')
+        fetch('/traffic-violation-markers/')
         .then(response => response.json())
-        .then(data => {
-            data.forEach(function(item) {
+        .then(markers => {
+            markers.forEach(function(markerData) {
                 var marker = new google.maps.Marker({
-                    position: {lat: item.lat, lng: item.lng},
+                    position: {lat: markerData.lat, lng: markerData.lng},
                     map: map,
-                    title: item.title
-                });
-
-                var imageSrc = item.media ? '/' + item.media : getRandomErrorImage();
-                var infowindowContent = '<div><strong>' + item.title + '</strong><br>' +
-                                        '<img src="' + imageSrc + '" style="width: 150px;" onerror="this.onerror=null;this.src=getRandomErrorImage();"><br>' +
-                                        '其他信息或描述</div>';
-
-                var infowindow = new google.maps.InfoWindow({
-                    content: infowindowContent
+                    title: markerData.title
                 });
 
                 marker.addListener('click', function() {
-                    infowindow.open(map, marker);
+                    fetch(`/traffic-violation-details/${markerData.traffic_violation_id}`)
+                    .then(response => response.json())
+                    .then(details => {
+                        var imageSrc = details.media ? '/' + details.media : getRandomErrorImage();
+                        var infowindowContent = '<div><strong>' + details.title + '</strong><br>' +
+                                                '<img src="' + imageSrc + '" style="width: 150px;"><br>' +
+                                                '其他信息或描述</div>';
+
+                        var infowindow = new google.maps.InfoWindow({
+                            content: infowindowContent
+                        });
+
+                        infowindow.open(map, marker);
+                    });
                 });
             });
         });
