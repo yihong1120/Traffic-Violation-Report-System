@@ -12,8 +12,8 @@ from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
 from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
-import random
-from google.cloud import bigquery
+# import random
+# from google.cloud import bigquery
 from .bigquery_utils import get_traffic_violation_markers, get_traffic_violation_details, save_to_bigquery
 
 def traffic_violation_markers_view(request):
