@@ -92,6 +92,58 @@ def verify(request):
         return render(request, 'reports/verify.html')
 
 @login_required
+def edit_report(request):
+    client = bigquery.Client()
+    username = request.user.username
+
+    # 从 BigQuery 获取当前用户的提交记录
+    query = (
+        f"SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation` "
+        f"WHERE username = '{username}'"
+    )
+    query_job = client.query(query)
+    user_records = [dict(row) for row in query_job.result()]  # 转换为字典列表
+
+    # 从 BigQuery 获取媒体文件记录
+    media_query = (
+        "SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` "
+        "LIMIT 1000"
+    )
+    media_query_job = client.query(media_query)
+    media_records = [dict(row) for row in media_query_job.result()]  # 转换为字典列表
+
+    # 将媒体文件匹配到相应的违规记录中
+    for record in user_records:
+        record_media = [media['file'] for media in media_records if media['traffic_violation_id'] == record['traffic_violation_id']]
+        record['media'] = record_media
+
+    # 如果用户选择编辑特定的记录
+    selected_record_id = request.GET.get('record_id')
+    if selected_record_id:
+        selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
+        if selected_record:
+            # 创建一个表单实例，使用选中记录的数据进行初始化
+            form = ReportForm(initial=selected_record)
+            if request.method == 'POST':
+                # 处理POST请求，如果数据有效，更新记录
+                form = ReportForm(request.POST, request.FILES)
+                if form.is_valid():
+                    # 更新BigQuery中的记录
+                    # 注意：这里需要实现更新BigQuery记录的逻辑
+                    pass
+        else:
+            form = None
+    else:
+        form = None
+
+    context = {
+        'user_records': user_records,
+        'selected_record': selected_record if selected_record_id else None,
+        'form': form,
+    }
+    return render(request, 'reports/edit_report.html', context)
+
+@login_required
 def account_view(request):
     return render(request, 'reports/account.html', {'user': request.user})
 
