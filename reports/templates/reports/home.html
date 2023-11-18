@@ -75,6 +75,15 @@
         });
     }
 
+    function toggleCustomDateRange(value) {
+        var customDateRange = document.getElementById('custom-date-range');
+        if(value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    }
+
     function searchData() {
         var keyword = document.getElementById('search-keyword').value;
         var timeRange = document.getElementById('time-range-selector').value;
@@ -149,8 +158,6 @@
     // 页面加载完成后，调用initMap初始化地图
     window.onload = initMap;
 </script>
-
-
 
 <!-- 引入 Google Maps API -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>
