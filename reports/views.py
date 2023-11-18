@@ -128,9 +128,76 @@ def edit_report(request):
                 # 处理POST请求，如果数据有效，更新记录
                 form = ReportForm(request.POST, request.FILES)
                 if form.is_valid():
-                    # 更新BigQuery中的记录
-                    # 注意：这里需要实现更新BigQuery记录的逻辑
-                    pass
+                    # 提取表单数据
+                    data = form.cleaned_data
+
+                    # 构建更新语句
+                    update_query = """
+                        UPDATE `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation`
+                        SET license_plate = @license_plate, 
+                            date = @date, 
+                            time = @time, 
+                            violation = @violation, 
+                            status = @status, 
+                            location = @location, 
+                            officer = @officer
+                        WHERE traffic_violation_id = @traffic_violation_id
+                    """
+
+                    # 配置查询参数
+                    params = [
+                        bigquery.ScalarQueryParameter("license_plate", "STRING", data['license_plate']),
+                        bigquery.ScalarQueryParameter("date", "DATE", data['date']),
+                        bigquery.ScalarQueryParameter("time", "STRING", data['time'].strftime("%H:%M:%S")),
+                        bigquery.ScalarQueryParameter("violation", "STRING", data['violation']),
+                        bigquery.ScalarQueryParameter("status", "STRING", data['status']),
+                        bigquery.ScalarQueryParameter("location", "STRING", data['location']),
+                        bigquery.ScalarQueryParameter("officer", "STRING", data['officer']),
+                        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+                    ]
+
+                    job_config = bigquery.QueryJobConfig(
+                        query_parameters=params
+                    )
+
+                    # 执行更新语句
+                    query_job = client.query(update_query, job_config=job_config)
+                    query_job.result()  # 等待执行完成
+
+                    # 获取媒体文件
+                    media_files = request.FILES.getlist('media')
+
+                    # 删除旧的媒体文件记录
+                    delete_query = """
+                        DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
+                        WHERE traffic_violation_id = @traffic_violation_id
+                    """
+                    delete_params = [
+                        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+                    ]
+                    delete_job_config = bigquery.QueryJobConfig(
+                        query_parameters=delete_params
+                    )
+                    client.query(delete_query, delete_job_config).result()
+
+                    # 为每个文件构建并执行插入语句
+                    for media_file in media_files:
+                        insert_query = """
+                            INSERT INTO `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` (file, traffic_violation_id)
+                            VALUES (@file, @traffic_violation_id)
+                        """
+                        insert_params = [
+                            bigquery.ScalarQueryParameter("file", "STRING", media_file.name),
+                            bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+                        ]
+                        insert_job_config = bigquery.QueryJobConfig(
+                            query_parameters=insert_params
+                        )
+                        client.query(insert_query, insert_job_config).result()
+
+                    messages.success(request, "记录和媒体文件已成功更新。")
+                    # 重定向或其他后续操作
+
         else:
             form = None
     else:
