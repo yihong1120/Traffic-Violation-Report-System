@@ -1,6 +1,101 @@
 from typing import List, Dict
 from django.http import JsonResponse, HttpRequest
 from google.cloud import bigquery
+import datetime
+
+def search_traffic_violations(request: HttpRequest) -> JsonResponse:
+    """
+    Retrieve filtered traffic violation data from BigQuery based on the search parameters.
+
+    This function constructs a SQL query to filter traffic violation records by a keyword
+    and/or a date range. The date range can be a predefined range such as '1day' or '1week',
+    or a custom range provided by the user. It then executes the query and returns the results.
+
+    Args:
+        request: The incoming HTTP request containing GET parameters for keyword search
+                 and date range filtering.
+
+    Returns:
+        JsonResponse containing a list of traffic violations that match the search criteria.
+    """
+
+    # Initialise a BigQuery client
+    client = bigquery.Client()
+
+    # Fetch GET parameters from the request
+    keyword: str = request.GET.get('keyword', '')
+    time_range: str = request.GET.get('timeRange', 'all')
+    from_date: str = request.GET.get('fromDate', '')
+    to_date: str = request.GET.get('toDate', '')
+
+    # Build WHERE clauses based on the provided time range
+    where_clauses: List[str] = []
+    if time_range != 'all':
+        # Process the time range
+        if time_range == 'custom':
+            where_clauses.append(f"DATE(date) BETWEEN '{from_date}' AND '{to_date}'")
+        else:
+            # Get the current date
+            current_date: datetime.date = datetime.datetime.now().date()
+
+            # Calculate the date range
+            if time_range == '1day':
+                date_from = current_date - datetime.timedelta(days=1)
+                where_clauses.append(f"DATE(date) = '{date_from}'")
+            elif time_range == '1week':
+                date_from = current_date - datetime.timedelta(weeks=1)
+                where_clauses.append(f"DATE(date) >= '{date_from}'")
+            elif time_range == '1month':
+                date_from = current_date - datetime.timedelta(days=30)  # 假设每个月30天
+                where_clauses.append(f"DATE(date) >= '{date_from}'")
+            elif time_range == '6months':
+                date_from = current_date - datetime.timedelta(days=30*6)  # 假设每个月30天
+                where_clauses.append(f"DATE(date) >= '{date_from}'")
+            elif time_range == '1year':
+                date_from = current_date - datetime.timedelta(days=365)  # 假设每年365天
+                where_clauses.append(f"DATE(date) >= '{date_from}'")
+            elif time_range == 'custom':
+                where_clauses.append(f"DATE(date) BETWEEN '{from_date}' AND '{to_date}'")
+
+    # Process the keyword for filtering
+    if keyword:
+        where_clauses.append(
+            f"(license_plate LIKE '%{keyword}%' OR "
+            f"violation LIKE '%{keyword}%' OR "
+            f"location LIKE '%{keyword}%')"
+        )
+
+    # Construct the complete SQL query
+    where_clause: str = ' AND '.join(where_clauses) if where_clauses else 'TRUE'
+    query: str = (
+        f"SELECT license_plate, date, time, violation, status, location, traffic_violation_id "
+        f"FROM `traffic_violation_db.reports_trafficviolation` "
+        f"WHERE {where_clause}"
+    )
+
+    # Execute the query
+    query_job = client.query(query)
+    results = query_job.result()
+
+    # Build the response data
+    data: List[Dict[str, str]] = [
+        {
+            'lat': float(location.split(',')[0]),
+            'lng': float(location.split(',')[1]),
+            'title': f'{license_plate} - {violation}',
+            'date': date,
+            'time': time,
+            'traffic_violation_id': traffic_violation_id
+        }
+        for row in results
+        for license_plate, date, time, violation, status, location, traffic_violation_id in [(row.license_plate, row.date, row.time, row.violation, row.status, row.location, row.traffic_violation_id)]
+    ]
+
+    # Log the data for debugging purposes
+    print(f"data: {data}")
+
+    # Return the data as a JSON response
+    return JsonResponse(data, safe=False)
 
 def get_traffic_violation_markers(request: HttpRequest) -> JsonResponse:
     """
