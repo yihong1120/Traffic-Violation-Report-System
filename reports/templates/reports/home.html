@@ -1,59 +1,163 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Welcome to Traffic Violation Report System</h2>
+<h2>欢迎来到交通违规报告系统</h2>
 
 {% if request.user.is_authenticated %}
-    <p>Hello, {{ request.user.username }}!</p>
-    <a href="{% url 'logout' %}">Logout</a>
+    <p>您好，{{ request.user.username }}！</p>
+    <a href="{% url 'logout' %}">登出</a>
 {% else %}
-    <p>Please <a href="{% url 'login' %}">login</a> to continue.</p>
+    <p>请<a href="{% url 'login' %}">登录</a>继续。</p>
 {% endif %}
+
+<div id="search-container">
+    <input type="text" id="search-keyword" placeholder="请输入关键字、车牌或地点">
+    <select id="time-range-selector" onchange="toggleCustomDateRange(this.value)">
+        <option value="all">不限时间</option>
+        <option value="1day">过去一天</option>
+        <option value="1week">过去一周</option>
+        <option value="1month">过去一个月</option>
+        <option value="6months">过去半年</option>
+        <option value="1year">过去一年</option>
+        <option value="custom">自行设置</option>
+    </select>
+    <div id="custom-date-range" style="display: none;">
+        <label for="from-date">从:</label>
+        <input type="date" id="from-date">
+        <label for="to-date">到:</label>
+        <input type="date" id="to-date">
+    </div>
+    <button onclick="searchData()">搜索</button>
+</div>
 
 <div id="map-container" style="height: 400px; width: 100%;">
     <div id="map" style="height: 100%;"></div>
 </div>
 
 <script>
+    // 定义全局变量
+    var map;
+    var markersArray = [];
+
     function initMap() {
-        var map = new google.maps.Map(document.getElementById('map'), {
+        map = new google.maps.Map(document.getElementById('map'), {
             center: {lat: 23.6978, lng: 120.9605},
             zoom: 8,
             mapTypeId: 'roadmap'
         });
 
+        // 默认加载所有标记
+        loadMarkers();
+    }
+
+    function loadMarkers() {
         fetch('/traffic-violation-markers/')
         .then(response => response.json())
         .then(markers => {
-            markers.forEach(function(markerData) {
-                var marker = new google.maps.Marker({
-                    position: {lat: markerData.lat, lng: markerData.lng},
-                    map: map,
-                    title: markerData.title
-                });
-
-                marker.addListener('click', function() {
-                    fetch(`/traffic-violation-details/${markerData.traffic_violation_id}`)
-                    .then(response => response.json())
-                    .then(details => {
-                        var imageSrc = details.media ? '/' + details.media : getRandomErrorImage();
-                        var infowindowContent = '<div><strong>' + details.title + '</strong><br>' +
-                                                '<img src="' + imageSrc + '" style="width: 150px;"><br>' +
-                                                '其他信息或描述</div>';
-
-                        var infowindow = new google.maps.InfoWindow({
-                            content: infowindowContent
-                        });
-
-                        infowindow.open(map, marker);
-                    });
-                });
-            });
+            addMarkersToMap(markers);
         });
     }
+
+    function addMarkersToMap(markers) {
+        markers.forEach(function(markerData) {
+            var marker = new google.maps.Marker({
+                position: {lat: markerData.lat, lng: markerData.lng},
+                map: map,
+                title: markerData.title
+            });
+
+            marker.addListener('click', function() {
+                // ...点击事件...
+            });
+
+            // 将标记添加到全局数组
+            markersArray.push(marker);
+        });
+    }
+
+    function toggleCustomDateRange(value) {
+        var customDateRange = document.getElementById('custom-date-range');
+        if(value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    }
+
+    function searchData() {
+        var keyword = document.getElementById('search-keyword').value;
+        var timeRange = document.getElementById('time-range-selector').value;
+        var fromDate = timeRange === 'custom' ? document.getElementById('from-date').value : null;
+        var toDate = timeRange === 'custom' ? document.getElementById('to-date').value : null;
+
+        // 清除地图上现有的标记
+        clearMapMarkers();
+
+        // 构建请求的URL
+        var searchUrl = '/search-traffic-violations/?keyword=' + encodeURIComponent(keyword) +
+                            '&timeRange=' + encodeURIComponent(timeRange);
+        if (fromDate && toDate) {
+            searchUrl += '&fromDate=' + encodeURIComponent(fromDate) + '&toDate=' + encodeURIComponent(toDate);
+        }
+
+        // 使用fetch API进行AJAX调用
+        fetch(searchUrl)
+        .then(response => response.json())
+        .then(markers => {
+            addMarkersToMap(markers);  // 使用新增的函数添加标记
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function clearMapMarkers() {
+        for (var i = 0; i < markersArray.length; i++) {
+            markersArray[i].setMap(null);
+        }
+        markersArray = [];
+    }
+
+    function addMarkersToMap(markers) {
+        markers.forEach(function(markerData) {
+            var marker = new google.maps.Marker({
+                position: {lat: markerData.lat, lng: markerData.lng},
+                map: map,
+                title: markerData.title
+            });
+
+            // 绑定点击事件到标记上
+            marker.addListener('click', function() {
+                // 从后端获取违规详情数据
+                fetch(`/traffic-violation-details/${markerData.traffic_violation_id}`)
+                .then(response => response.json())
+                .then(details => {
+                    // 如果有媒体文件，则构建图片URL，否则使用默认图片
+                    var imageSrc = details.media ? '/' + details.media : 'path/to/default/image.jpg';
+                    var infowindowContent = '<div><strong>' + details.title + '</strong><br>' +
+                                            '<img src="' + imageSrc + '" style="width: 150px;"><br>' +
+                                            '其他信息或描述</div>';
+
+                    // 创建一个信息窗口并将其打开
+                    var infowindow = new google.maps.InfoWindow({
+                        content: infowindowContent
+                    });
+
+                    infowindow.open(map, marker);
+                })
+                .catch(error => {
+                    console.error('Error fetching violation details:', error);
+                });
+            });
+
+            // 将标记添加到全局数组
+            markersArray.push(marker);
+        });
+    }
+
+    // 页面加载完成后，调用initMap初始化地图
+    window.onload = initMap;
 </script>
-
-
 
 <!-- 引入 Google Maps API -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>

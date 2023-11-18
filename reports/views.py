@@ -12,9 +12,20 @@ from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
 from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
-import random
 from google.cloud import bigquery
-from .bigquery_utils import get_traffic_violation_markers, get_traffic_violation_details, save_to_bigquery
+from .bigquery_utils import get_traffic_violation_markers, get_traffic_violation_details, save_to_bigquery, search_traffic_violations
+
+def search_traffic_violations_view(request):
+    client = bigquery.Client()
+
+    keyword = request.GET.get('keyword', '')
+    time_range = request.GET.get('timeRange', 'all')
+    from_date = request.GET.get('fromDate', '')
+    to_date = request.GET.get('toDate', '')
+
+    data = search_traffic_violations(client, keyword, time_range, from_date, to_date)
+
+    return JsonResponse(data, safe=False)
 
 def traffic_violation_markers_view(request):
     data = get_traffic_violation_markers()
