@@ -19,8 +19,15 @@
       {# 小時和分鐘字段的渲染 #}
       時間: {{ form.hour }} : {{ form.minute }}<br>
       
+      <input type="file" id="fileInput" name="media" accept=".jpg, .jpeg, .png, .gif" multiple>
+      <button type="button" onclick="clearFileInput()">Clear Files</button>
       <button type="submit">提交</button>
   </form>
+
+  <!-- File Previews -->
+  <div id="filePreviews">
+    <!-- File previews will be displayed here -->
+  </div>
 
   <!-- Google Maps Embed -->
   <div id="map-container" style="height: 400px; width: 100%;">
@@ -32,4 +39,39 @@
         src="https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=23.6978,120.9605&zoom=8&maptype=roadmap" allowfullscreen>
     </iframe>
   </div>
+
+  <script>
+    // Function to clear the file input field
+    function clearFileInput() {
+      document.getElementById('fileInput').value = '';
+      document.getElementById('filePreviews').innerHTML = '';
+    }
+
+    // Function to display file previews
+    document.getElementById('fileInput').addEventListener('change', function (event) {
+      const filePreviews = document.getElementById('filePreviews');
+      filePreviews.innerHTML = '';
+
+      for (let i = 0; i < event.target.files.length; i++) {
+        const file = event.target.files[i];
+        const filePreview = document.createElement('div');
+        filePreview.className = 'file-preview';
+        filePreview.innerHTML = `
+          <img src="${URL.createObjectURL(file)}" alt="${file.name}" height="100">
+          <button type="button" onclick="removeFile(${i})">Remove</button>
+        `;
+        filePreviews.appendChild(filePreview);
+      }
+    });
+
+    // Function to remove a file preview
+    function removeFile(index) {
+      const fileInput = document.getElementById('fileInput');
+      const filePreviews = document.getElementById('filePreviews');
+      fileInput.files.splice(index, 1);
+
+      const filePreview = filePreviews.getElementsByClassName('file-preview')[index];
+      filePreview.remove();
+    }
+  </script>
 {% endblock %}
