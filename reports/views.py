@@ -228,6 +228,7 @@ def dashboard(request):
                 status=form.cleaned_data['status'],
                 location=process_input(form.cleaned_data['location']),
                 officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
+                username=request.user.username  # 添加当前登录用户的用户名
                 # media 字段将在模型的 save 方法中处理
             )
             # 保存 TrafficViolation 实例

@@ -31,6 +31,7 @@ class TrafficViolation(models.Model):
     status = models.CharField(max_length=50, choices=STATUS)
     location = models.CharField(max_length=255)
     officer = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    username = models.CharField(max_length=150, blank=True, null=True)
 
 @deconstructible
 class PathAndRename(object):
