@@ -1,7 +1,126 @@
 from typing import List, Dict
 from django.http import JsonResponse, HttpRequest
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from google.cloud import bigquery
 import datetime
+
+def get_user_records(username: str) -> List[Dict]:
+    """
+    Retrieve records for a specific user from BigQuery.
+
+    This function executes a query to fetch all traffic violation records
+    associated with the given username from the BigQuery table.
+
+    Args:
+        username (str): The username to query for.
+
+    Returns:
+        List[Dict]: A list of dictionaries, each representing a traffic violation record.
+    """
+    client = bigquery.Client()
+    query = (
+        f"SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation` "
+        f"WHERE username = '{username}'"
+    )
+    query_job = client.query(query)
+    return [dict(row) for row in query_job.result()]
+
+def get_media_records() -> List[Dict]:
+    """
+    Retrieve all media records from BigQuery.
+
+    This function fetches media file information related to traffic violations
+    from the BigQuery table. It's limited to a maximum of 1000 records for performance.
+
+    Returns:
+        List[Dict]: A list of dictionaries, each representing a media file record.
+    """
+    client = bigquery.Client()
+    media_query = (
+        "SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` "
+        "LIMIT 1000"
+    )
+    media_query_job = client.query(media_query)
+    return [dict(row) for row in media_query_job.result()]
+
+def update_traffic_violation(data: Dict, selected_record_id: str):
+    """
+    Update a specific traffic violation record in BigQuery.
+
+    This function constructs and executes a SQL query to update a traffic violation record
+    in BigQuery based on the provided data dictionary and record ID.
+
+    Args:
+        data (Dict): The data dictionary containing traffic violation information.
+        selected_record_id (str): The ID of the traffic violation record to update.
+    """
+    client = bigquery.Client()
+
+    # Construct the update statement and parameters
+    update_query = """
+        UPDATE `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation`
+        SET license_plate = @license_plate, 
+            date = @date, 
+            time = @time, 
+            violation = @violation, 
+            status = @status, 
+            location = @location, 
+            officer = @officer
+        WHERE traffic_violation_id = @traffic_violation_id
+    """
+
+    params = [
+        bigquery.ScalarQueryParameter("license_plate", "STRING", data['license_plate']),
+        bigquery.ScalarQueryParameter("date", "DATE", data['date']),
+        bigquery.ScalarQueryParameter("time", "STRING", data['time'].strftime("%H:%M:%S")),
+        bigquery.ScalarQueryParameter("violation", "STRING", data['violation']),
+        bigquery.ScalarQueryParameter("status", "STRING", data['status']),
+        bigquery.ScalarQueryParameter("location", "STRING", data['location']),
+        bigquery.ScalarQueryParameter("officer", "STRING", data['officer']),
+        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+    ]
+
+    job_config = bigquery.QueryJobConfig(query_parameters=params)
+
+    # Execute the update
+    client.query(update_query, job_config=job_config).result()
+
+def update_media_files(selected_record_id: str, media_files: List[InMemoryUploadedFile]):
+    """
+    Update media files associated with a specific traffic violation record in BigQuery.
+
+    This function first deletes any existing media files associated with the traffic violation
+    record and then inserts the new media file information.
+
+    Args:
+        selected_record_id (str): The ID of the traffic violation record.
+        media_files (List[InMemoryUploadedFile]): A list of media files to be associated with the record.
+    """
+    client = bigquery.Client()
+
+    # Delete existing media files
+    delete_query = """
+        DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
+        WHERE traffic_violation_id = @traffic_violation_id
+    """
+    delete_params = [
+        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+    ]
+    delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
+    client.query(delete_query, delete_job_config).result()
+
+    # Insert new media files
+    for media_file in media_files:
+        insert_query = """
+            INSERT INTO `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` (file, traffic_violation_id)
+            VALUES (@file, @traffic_violation_id)
+        """
+        insert_params = [
+            bigquery.ScalarQueryParameter("file", "STRING", media_file.name),
+            bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+        ]
+        insert_job_config = bigquery.QueryJobConfig(query_parameters=insert_params)
+        client.query(insert_query, insert_job_config).result()
 
 def search_traffic_violations(request: HttpRequest) -> JsonResponse:
     """
@@ -217,6 +336,7 @@ def save_to_bigquery(traffic_violation: 'TrafficViolation', media_files: List['M
             "location": traffic_violation.location,
             "officer": traffic_violation.officer.username if traffic_violation.officer else None,
             "traffic_violation_id": traffic_violation.id,
+            "username": traffic_violation.username,
         },
     ]
 

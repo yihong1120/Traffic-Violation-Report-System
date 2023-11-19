@@ -13,7 +13,16 @@ from .models import UserProfile
 from .models import TrafficViolation, MediaFile
 from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
 from google.cloud import bigquery
-from .bigquery_utils import get_traffic_violation_markers, get_traffic_violation_details, save_to_bigquery, search_traffic_violations
+from .bigquery_utils import (
+    get_traffic_violation_markers,
+    get_traffic_violation_details,
+    save_to_bigquery,
+    search_traffic_violations,
+    get_user_records,
+    get_media_records,
+    update_traffic_violation,
+    update_media_files
+)
 
 def search_traffic_violations_view(request):
     client = bigquery.Client()
@@ -93,24 +102,11 @@ def verify(request):
 
 @login_required
 def edit_report(request):
-    client = bigquery.Client()
     username = request.user.username
 
-    # 从 BigQuery 获取当前用户的提交记录
-    query = (
-        f"SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation` "
-        f"WHERE username = '{username}'"
-    )
-    query_job = client.query(query)
-    user_records = [dict(row) for row in query_job.result()]  # 转换为字典列表
-
-    # 从 BigQuery 获取媒体文件记录
-    media_query = (
-        "SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` "
-        "LIMIT 1000"
-    )
-    media_query_job = client.query(media_query)
-    media_records = [dict(row) for row in media_query_job.result()]  # 转换为字典列表
+    # 从 BigQuery 获取当前用户的提交记录和媒体文件记录
+    user_records = get_user_records(username)
+    media_records = get_media_records()
 
     # 将媒体文件匹配到相应的违规记录中
     for record in user_records:
@@ -122,82 +118,21 @@ def edit_report(request):
     if selected_record_id:
         selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
         if selected_record:
-            # 创建一个表单实例，使用选中记录的数据进行初始化
             form = ReportForm(initial=selected_record)
             if request.method == 'POST':
-                # 处理POST请求，如果数据有效，更新记录
                 form = ReportForm(request.POST, request.FILES)
                 if form.is_valid():
-                    # 提取表单数据
                     data = form.cleaned_data
 
-                    # 构建更新语句
-                    update_query = """
-                        UPDATE `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation`
-                        SET license_plate = @license_plate, 
-                            date = @date, 
-                            time = @time, 
-                            violation = @violation, 
-                            status = @status, 
-                            location = @location, 
-                            officer = @officer
-                        WHERE traffic_violation_id = @traffic_violation_id
-                    """
+                    # 更新 BigQuery 中的记录
+                    update_traffic_violation(data, selected_record_id)
 
-                    # 配置查询参数
-                    params = [
-                        bigquery.ScalarQueryParameter("license_plate", "STRING", data['license_plate']),
-                        bigquery.ScalarQueryParameter("date", "DATE", data['date']),
-                        bigquery.ScalarQueryParameter("time", "STRING", data['time'].strftime("%H:%M:%S")),
-                        bigquery.ScalarQueryParameter("violation", "STRING", data['violation']),
-                        bigquery.ScalarQueryParameter("status", "STRING", data['status']),
-                        bigquery.ScalarQueryParameter("location", "STRING", data['location']),
-                        bigquery.ScalarQueryParameter("officer", "STRING", data['officer']),
-                        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
-                    ]
-
-                    job_config = bigquery.QueryJobConfig(
-                        query_parameters=params
-                    )
-
-                    # 执行更新语句
-                    query_job = client.query(update_query, job_config=job_config)
-                    query_job.result()  # 等待执行完成
-
-                    # 获取媒体文件
+                    # 处理媒体文件上传和更新
                     media_files = request.FILES.getlist('media')
-
-                    # 删除旧的媒体文件记录
-                    delete_query = """
-                        DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
-                        WHERE traffic_violation_id = @traffic_violation_id
-                    """
-                    delete_params = [
-                        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
-                    ]
-                    delete_job_config = bigquery.QueryJobConfig(
-                        query_parameters=delete_params
-                    )
-                    client.query(delete_query, delete_job_config).result()
-
-                    # 为每个文件构建并执行插入语句
-                    for media_file in media_files:
-                        insert_query = """
-                            INSERT INTO `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` (file, traffic_violation_id)
-                            VALUES (@file, @traffic_violation_id)
-                        """
-                        insert_params = [
-                            bigquery.ScalarQueryParameter("file", "STRING", media_file.name),
-                            bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
-                        ]
-                        insert_job_config = bigquery.QueryJobConfig(
-                            query_parameters=insert_params
-                        )
-                        client.query(insert_query, insert_job_config).result()
+                    update_media_files(selected_record_id, media_files)
 
                     messages.success(request, "记录和媒体文件已成功更新。")
-                    # 重定向或其他后续操作
-
+                    return redirect('edit_report')
         else:
             form = None
     else:
@@ -219,6 +154,7 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
+            print(f"username: {request.user.username}")
             # 创建一个新的 TrafficViolation 实例
             traffic_violation = TrafficViolation(
                 license_plate=form.cleaned_data['license_plate'],
