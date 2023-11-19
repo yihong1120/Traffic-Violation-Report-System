@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- 左侧的提交记录列表 -->
+        <div class="col-md-4">
+            <h3>提交记录</h3>
+            <ul>
+                {% for record in user_records %}
+                <li>
+                    <a href="?record_id={{ record.traffic_violation_id }}">
+                        {{ record.date }} - {{ record.license_plate }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- 右侧的编辑区域 -->
+        <div class="col-md-8">
+            {% if selected_record %}
+            <h3>编辑记录</h3>
+            <!-- 表单用于编辑记录 -->
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">保存更改</button>
+            </form>
+            {% else %}
+            <p>请选择一个记录进行编辑。</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -13,7 +13,16 @@ from .models import UserProfile
 from .models import TrafficViolation, MediaFile
 from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
 from google.cloud import bigquery
-from .bigquery_utils import get_traffic_violation_markers, get_traffic_violation_details, save_to_bigquery, search_traffic_violations
+from .bigquery_utils import (
+    get_traffic_violation_markers,
+    get_traffic_violation_details,
+    save_to_bigquery,
+    search_traffic_violations,
+    get_user_records,
+    get_media_records,
+    update_traffic_violation,
+    update_media_files
+)
 
 def search_traffic_violations_view(request):
     client = bigquery.Client()
@@ -92,6 +101,51 @@ def verify(request):
         return render(request, 'reports/verify.html')
 
 @login_required
+def edit_report(request):
+    username = request.user.username
+
+    # 从 BigQuery 获取当前用户的提交记录和媒体文件记录
+    user_records = get_user_records(username)
+    media_records = get_media_records()
+
+    # 将媒体文件匹配到相应的违规记录中
+    for record in user_records:
+        record_media = [media['file'] for media in media_records if media['traffic_violation_id'] == record['traffic_violation_id']]
+        record['media'] = record_media
+
+    # 如果用户选择编辑特定的记录
+    selected_record_id = request.GET.get('record_id')
+    if selected_record_id:
+        selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
+        if selected_record:
+            form = ReportForm(initial=selected_record)
+            if request.method == 'POST':
+                form = ReportForm(request.POST, request.FILES)
+                if form.is_valid():
+                    data = form.cleaned_data
+
+                    # 更新 BigQuery 中的记录
+                    update_traffic_violation(data, selected_record_id)
+
+                    # 处理媒体文件上传和更新
+                    media_files = request.FILES.getlist('media')
+                    update_media_files(selected_record_id, media_files)
+
+                    messages.success(request, "记录和媒体文件已成功更新。")
+                    return redirect('edit_report')
+        else:
+            form = None
+    else:
+        form = None
+
+    context = {
+        'user_records': user_records,
+        'selected_record': selected_record if selected_record_id else None,
+        'form': form,
+    }
+    return render(request, 'reports/edit_report.html', context)
+
+@login_required
 def account_view(request):
     return render(request, 'reports/account.html', {'user': request.user})
 
@@ -100,6 +154,7 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
+            print(f"username: {request.user.username}")
             # 创建一个新的 TrafficViolation 实例
             traffic_violation = TrafficViolation(
                 license_plate=form.cleaned_data['license_plate'],
@@ -109,6 +164,7 @@ def dashboard(request):
                 status=form.cleaned_data['status'],
                 location=process_input(form.cleaned_data['location']),
                 officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
+                username=request.user.username  # 添加当前登录用户的用户名
                 # media 字段将在模型的 save 方法中处理
             )
             # 保存 TrafficViolation 实例
