@@ -14,20 +14,20 @@
       {{ form.status.label_tag }}: {{ form.status }}<br>
       {{ form.location.label_tag }}: {{ form.location }}<br>
       {{ form.officer.label_tag }}: {{ form.officer }}<br>
-      {{ form.media.label_tag }}: {{ form.media }}<br>
+      <!-- {{ form.media.label_tag }}: {{ form.media }}<br> -->
 
       {# 小時和分鐘字段的渲染 #}
       時間: {{ form.hour }} : {{ form.minute }}<br>
       
-      <input type="file" id="fileInput" name="media" accept=".jpg, .jpeg, .png, .gif" multiple>
-      <button type="button" onclick="clearFileInput()">Clear Files</button>
+      {{ form.media.label_tag }}: 
+      <input type="file" name="media" multiple id="media-input" style="display: none;">
+      <button type="button" id="add-media-button">新增</button><br>
+      
+      <!-- File Preview Container -->
+      <div id="file-preview-container"></div>
+
       <button type="submit">提交</button>
   </form>
-
-  <!-- File Previews -->
-  <div id="filePreviews">
-    <!-- File previews will be displayed here -->
-  </div>
 
   <!-- Google Maps Embed -->
   <div id="map-container" style="height: 400px; width: 100%;">
@@ -41,37 +41,86 @@
   </div>
 
   <script>
-    // Function to clear the file input field
-    function clearFileInput() {
-      document.getElementById('fileInput').value = '';
-      document.getElementById('filePreviews').innerHTML = '';
-    }
-
-    // Function to display file previews
-    document.getElementById('fileInput').addEventListener('change', function (event) {
-      const filePreviews = document.getElementById('filePreviews');
-      filePreviews.innerHTML = '';
-
-      for (let i = 0; i < event.target.files.length; i++) {
-        const file = event.target.files[i];
-        const filePreview = document.createElement('div');
-        filePreview.className = 'file-preview';
-        filePreview.innerHTML = `
-          <img src="${URL.createObjectURL(file)}" alt="${file.name}" height="100">
-          <button type="button" onclick="removeFile(${i})">Remove</button>
-        `;
-        filePreviews.appendChild(filePreview);
-      }
+    var customFileList = []; // Custom file list
+    document.getElementById('add-media-button').addEventListener('click', function() {
+      document.getElementById('media-input').click();
     });
 
-    // Function to remove a file preview
-    function removeFile(index) {
-      const fileInput = document.getElementById('fileInput');
-      const filePreviews = document.getElementById('filePreviews');
-      fileInput.files.splice(index, 1);
+    document.getElementById('media-input').addEventListener('change', function(e) {
+      Array.from(e.target.files).forEach(file => {
+        customFileList.push(file);
+        createPreview(file);
+      });
+      updateFormFiles();
+    });
 
-      const filePreview = filePreviews.getElementsByClassName('file-preview')[index];
-      filePreview.remove();
+    function createPreview(file) {
+      let previewContainer = document.getElementById('file-preview-container');
+      let previewDiv = document.createElement('div');
+      previewDiv.classList.add('file-preview');
+      previewDiv.dataset.fileName = file.name;
+
+      let removeButton = document.createElement('button');
+      removeButton.innerText = 'X';
+      removeButton.classList.add('remove-button');
+      removeButton.onclick = function() {
+        removeFile(file.name);
+        previewDiv.remove();
+      };
+
+      let image = new Image();
+      image.height = 100;
+      image.title = file.name;
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        image.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      previewDiv.appendChild(image);
+      previewDiv.appendChild(removeButton);
+      previewContainer.appendChild(previewDiv);
+    }
+
+    function removeFile(fileName) {
+      customFileList = customFileList.filter(file => file.name !== fileName);
+      updateFormFiles();
+    }
+
+    function updateFormFiles() {
+      let dataTransfer = new DataTransfer();
+      customFileList.forEach(file => dataTransfer.items.add(file));
+      document.getElementById('media-input').files = dataTransfer.files;
     }
   </script>
+
+  <style>
+    #file-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .file-preview {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 5px;
+    }
+    .file-preview img {
+      display: block;
+    }
+    .file-preview .remove-button {
+      position: absolute;
+      top: -10px;  /* Adjust as needed */
+      right: -10px; /* Adjust as needed */
+      background-color: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 50%;
+      padding: 0 5px;
+    }
+  </style>
 {% endblock %}
