@@ -3,7 +3,7 @@ A platform for users to upload and share the responses from law enforcement agen
 
 ## To do list
 - [ ] Utilise Python's Django to design functionalities for:
-    - [ ] uploading,
+    - [x] uploading,
     - [ ] displaying,
     - [ ] user management,
     - [ ] login recaptcha,
