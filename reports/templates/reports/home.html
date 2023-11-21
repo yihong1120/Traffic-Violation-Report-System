@@ -58,23 +58,6 @@
         });
     }
 
-    function addMarkersToMap(markers) {
-        markers.forEach(function(markerData) {
-            var marker = new google.maps.Marker({
-                position: {lat: markerData.lat, lng: markerData.lng},
-                map: map,
-                title: markerData.title
-            });
-
-            marker.addListener('click', function() {
-                // ...点击事件...
-            });
-
-            // 将标记添加到全局数组
-            markersArray.push(marker);
-        });
-    }
-
     function toggleCustomDateRange(value) {
         var customDateRange = document.getElementById('custom-date-range');
         if(value === 'custom') {
@@ -133,7 +116,7 @@
                 .then(response => response.json())
                 .then(details => {
                     // 如果有媒体文件，则构建图片URL，否则使用默认图片
-                    var imageSrc = details.media ? '/' + details.media : 'path/to/default/image.jpg';
+                    var imageSrc = details.media ? '/media/' + details.media : 'path/to/default/image.jpg';
                     var infowindowContent = '<div><strong>' + details.title + '</strong><br>' +
                                             '<img src="' + imageSrc + '" style="width: 150px;"><br>' +
                                             '其他信息或描述</div>';

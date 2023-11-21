@@ -152,41 +152,51 @@ def account_view(request):
 @login_required
 def dashboard(request):
     if request.method == 'POST':
-        form = ReportForm(request.POST, request.FILES)
-        if form.is_valid():
-            print(f"username: {request.user.username}")
-            # 创建一个新的 TrafficViolation 实例
-            traffic_violation = TrafficViolation(
-                license_plate=form.cleaned_data['license_plate'],
-                date=form.cleaned_data['date'],
-                time=form.cleaned_data['time'],  # 使用表单中清洗过的 time 字段
-                violation=form.cleaned_data['violation'],
-                status=form.cleaned_data['status'],
-                location=process_input(form.cleaned_data['location']),
-                officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
-                username=request.user.username  # 添加当前登录用户的用户名
-                # media 字段将在模型的 save 方法中处理
-            )
-            # 保存 TrafficViolation 实例
-            traffic_violation.save()
-
-            # Now handle file uploads
-            media_instances = []
-            for file in request.FILES.getlist('media'):
-                # Create a new instance of a model that handles the media files
-                # This model should have a ForeignKey to `TrafficViolation` and a FileField
-                media_instance = MediaFile(
-                    traffic_violation=traffic_violation,
-                    file=file
+        # 检测 AJAX 请求
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX 文件上传处理
+            file = request.FILES['file']
+            # 创建和保存 MediaFile 实例
+            media_instance = MediaFile(file=file)
+            media_instance.save()
+            # 返回成功响应
+            return JsonResponse({'status': 'success', 'file_id': media_instance.id})
+        else:
+            form = ReportForm(request.POST, request.FILES)
+            if form.is_valid():
+                print(f"username: {request.user.username}")
+                # 创建一个新的 TrafficViolation 实例
+                traffic_violation = TrafficViolation(
+                    license_plate=form.cleaned_data['license_plate'],
+                    date=form.cleaned_data['date'],
+                    time=form.cleaned_data['time'],  # 使用表单中清洗过的 time 字段
+                    violation=form.cleaned_data['violation'],
+                    status=form.cleaned_data['status'],
+                    location=process_input(form.cleaned_data['location']),
+                    officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
+                    username=request.user.username  # 添加当前登录用户的用户名
+                    # media 字段将在模型的 save 方法中处理
                 )
-                media_instance.save()
-                media_instances.append(media_instance)
+                # 保存 TrafficViolation 实例
+                traffic_violation.save()
 
-            # Insert the data from form into BigQuery
-            save_to_bigquery(traffic_violation, media_instances)
+                # Now handle file uploads
+                media_instances = []
+                for file in request.FILES.getlist('media'):
+                    # Create a new instance of a model that handles the media files
+                    # This model should have a ForeignKey to `TrafficViolation` and a FileField
+                    media_instance = MediaFile(
+                        traffic_violation=traffic_violation,
+                        file=file
+                    )
+                    media_instance.save()
+                    media_instances.append(media_instance)
 
-            messages.success(request, '报告提交成功。')
-            return redirect('dashboard')  # 重定向到dashboard页面或其他页面
+                # Insert the data from form into BigQuery
+                save_to_bigquery(traffic_violation, media_instances)
+
+                messages.success(request, '报告提交成功。')
+                return redirect('dashboard')  # 重定向到dashboard页面或其他页面
     else:
         form = ReportForm()  # 如果不是POST请求，则创建一个空表单
 

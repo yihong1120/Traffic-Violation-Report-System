@@ -2,6 +2,12 @@ from pathlib import Path
 import json
 import os
 
+# Maximum size in bytes before a file is handled in the file system
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*100  # 100MB
+
+# Maximum size of request data (post body)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*100  # 100MB
+
 # Define the base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
