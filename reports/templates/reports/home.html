@@ -133,7 +133,7 @@
                 .then(response => response.json())
                 .then(details => {
                     // 如果有媒体文件，则构建图片URL，否则使用默认图片
-                    var imageSrc = details.media ? '/' + details.media : 'path/to/default/image.jpg';
+                    var imageSrc = details.media ? '/media/' + details.media : 'path/to/default/image.jpg';
                     var infowindowContent = '<div><strong>' + details.title + '</strong><br>' +
                                             '<img src="' + imageSrc + '" style="width: 150px;"><br>' +
                                             '其他信息或描述</div>';
