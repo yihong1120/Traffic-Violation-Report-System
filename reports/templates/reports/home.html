@@ -58,23 +58,6 @@
         });
     }
 
-    function addMarkersToMap(markers) {
-        markers.forEach(function(markerData) {
-            var marker = new google.maps.Marker({
-                position: {lat: markerData.lat, lng: markerData.lng},
-                map: map,
-                title: markerData.title
-            });
-
-            marker.addListener('click', function() {
-                // ...点击事件...
-            });
-
-            // 将标记添加到全局数组
-            markersArray.push(marker);
-        });
-    }
-
     function toggleCustomDateRange(value) {
         var customDateRange = document.getElementById('custom-date-range');
         if(value === 'custom') {
