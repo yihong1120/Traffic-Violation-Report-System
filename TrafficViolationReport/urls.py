@@ -28,6 +28,7 @@ urlpatterns = [
     path('traffic-violation-markers/', report_views.get_traffic_violation_markers, name='traffic-violation-markers'),
     path('traffic-violation-details/<int:traffic_violation_id>/', report_views.get_traffic_violation_details, name='traffic-violation-details'),
     path('edit-report/', report_views.edit_report, name='edit_report'),
+    path('upload/', report_views.dashboard, name='file_upload'),
     # path('login/', LoginView.as_view(), name='login'),
     path('login/', report_views.login, name='login'),
     path('register/', report_views.register, name='register'),

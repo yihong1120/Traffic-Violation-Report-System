@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.conf import settings
 from multiupload.fields import MultiFileField
 from datetime import datetime
 import pytz
@@ -38,7 +39,7 @@ class ReportForm(forms.Form):
     status = forms.ChoiceField(label="檢舉結果", choices=STATUS, initial='其他')
     location = forms.CharField(label="地點", max_length=100)
     officer = forms.CharField(label="承辦人", max_length=100, required=False)
-    media = MultiFileField(label="媒體", min_num=1, max_num=10, max_file_size=1024*1024*5)
+    media = MultiFileField(label="媒體", min_num=1, max_num=10, max_file_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
 
     def clean(self):
         cleaned_data = super().clean()
