@@ -275,13 +275,14 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: in
         v.location, 
         v.officer,
         v.traffic_violation_id,
-        m.file
+        ARRAY_AGG(m.file) AS media_files
     FROM 
         `traffic_violation_db.reports_trafficviolation` v
     LEFT JOIN 
         `traffic_violation_db.reports_mediafile` m ON v.traffic_violation_id = m.traffic_violation_id
     WHERE 
         v.traffic_violation_id = @violation_id
+    GROUP BY v.license_plate, v.date, v.time, v.violation, v.status, v.location, v.officer, v.traffic_violation_id
     """
     
     # Configure the query with a parameter for the traffic violation ID.
@@ -295,15 +296,22 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: in
     query_job = client.query(query, job_config=job_config)
     result = query_job.result()
 
-    # Process the query result.
+    # Process query results
     row = list(result)[0]
     lat, lng = map(float, row.location.split(','))
+    media_files = row.media_files if row.media_files else ['path/to/default/image.jpg']
 
     data = {
         'lat': lat,
         'lng': lng,
         'title': f'{row.license_plate} - {row.violation}',
-        'media': row.file if row.file else 'path/to/default/image.jpg'
+        'media': media_files,  # 返回所有媒体文件
+        'license_plate': row.license_plate,
+        'date': row.date,
+        'time': row.time,
+        'violation': row.violation,
+        'status': row.status,
+        'officer': row.officer,
     }
 
     return JsonResponse(data)
