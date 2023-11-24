@@ -4,7 +4,7 @@ A platform for users to upload and share the responses from law enforcement agen
 ## To do list
 - [ ] Utilise Python's Django to design functionalities for:
     - [x] uploading,
-    - [ ] displaying,
+    - [x] displaying,
     - [ ] user management,
     - [ ] login recaptcha,
     - [ ] registration with Gmail validation,
@@ -14,7 +14,7 @@ A platform for users to upload and share the responses from law enforcement agen
 - [ ] Use OCR techniques to automatically generate the parameters of traffic violations.
 - [x] Design a SQL and BigQuery database on the cloud to store the information of violation, such as license plate, location, organiser(option), media, time.
 - [x] Pull the location on Google map.
-- [ ] Leverage the Google Maps API to depict the location, number, and severity of traffic violations.
+- [x] Leverage the Google Maps API to depict the location, number, and severity of traffic violations.
 - [ ] Deploy the server on Raspberry Pi 5 and establish nginx redirection of data on Ubuntu 22.04.
 - [ ] Procure a static domain from Chunghwa Telecom (CHT).
 - [ ] Register for Google Webmaster Tools.
