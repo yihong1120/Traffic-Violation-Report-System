@@ -1,23 +1,183 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Welcome to Traffic Violation Report System</h2>
+<h2>欢迎来到交通违规报告系统</h2>
 
 {% if request.user.is_authenticated %}
-    <p>Hello, {{ request.user.username }}!</p>
-    <a href="{% url 'logout' %}">Logout</a>
+    <p>您好，{{ request.user.username }}！</p>
+    <a href="{% url 'logout' %}">登出</a>
 {% else %}
-    <p>Please <a href="{% url 'login' %}">login</a> to continue.</p>
+    <p>请<a href="{% url 'login' %}">登录</a>继续。</p>
 {% endif %}
 
-<!-- Google Maps Embed -->
-<div id="map-container" style="height: 400px; width: 100%;">
-    <iframe
-        width="100%"
-        height="100%"
-        frameborder="0" style="border:0"
-        src="https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=23.6978,120.9605&zoom=8&maptype=roadmap" allowfullscreen>
-    </iframe>
+<div id="search-container">
+    <input type="text" id="search-keyword" placeholder="请输入关键字、车牌或地点">
+    <select id="time-range-selector" onchange="toggleCustomDateRange(this.value)">
+        <option value="all">不限时间</option>
+        <option value="1day">过去一天</option>
+        <option value="1week">过去一周</option>
+        <option value="1month">过去一个月</option>
+        <option value="6months">过去半年</option>
+        <option value="1year">过去一年</option>
+        <option value="custom">自行设置</option>
+    </select>
+    <div id="custom-date-range" style="display: none;">
+        <label for="from-date">从:</label>
+        <input type="date" id="from-date">
+        <label for="to-date">到:</label>
+        <input type="date" id="to-date">
+    </div>
+    <button onclick="searchData()">搜索</button>
 </div>
+
+<div id="map-container" style="height: 400px; width: 100%;">
+    <div id="map" style="height: 100%;"></div>
+</div>
+
+<script>
+    // 定义全局变量
+    var map;
+    var markersArray = [];
+    var currentInfowindow = null; // 跟踪当前打开的信息窗口
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 23.6978, lng: 120.9605},
+            zoom: 8,
+            mapTypeId: 'roadmap'
+        });
+
+        // 添加地图点击事件处理器来关闭当前信息窗口
+        map.addListener('click', function() {
+            if (currentInfowindow) {
+                currentInfowindow.close();
+            }
+        });
+
+        loadMarkers();
+    }
+
+    function loadMarkers() {
+        fetch('/traffic-violation-markers/')
+        .then(response => response.json())
+        .then(markers => {
+            addMarkersToMap(markers);
+        });
+    }
+
+    function toggleCustomDateRange(value) {
+        var customDateRange = document.getElementById('custom-date-range');
+        if(value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    }
+
+    function searchData() {
+        var keyword = document.getElementById('search-keyword').value;
+        var timeRange = document.getElementById('time-range-selector').value;
+        var fromDate = timeRange === 'custom' ? document.getElementById('from-date').value : null;
+        var toDate = timeRange === 'custom' ? document.getElementById('to-date').value : null;
+
+        // 清除地图上现有的标记
+        clearMapMarkers();
+
+        // 构建请求的URL
+        var searchUrl = '/search-traffic-violations/?keyword=' + encodeURIComponent(keyword) +
+                            '&timeRange=' + encodeURIComponent(timeRange);
+        if (fromDate && toDate) {
+            searchUrl += '&fromDate=' + encodeURIComponent(fromDate) + '&toDate=' + encodeURIComponent(toDate);
+        }
+
+        // 使用fetch API进行AJAX调用
+        fetch(searchUrl)
+        .then(response => response.json())
+        .then(markers => {
+            addMarkersToMap(markers);  // 使用新增的函数添加标记
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function clearMapMarkers() {
+        for (var i = 0; i < markersArray.length; i++) {
+            markersArray[i].setMap(null);
+        }
+        markersArray = [];
+    }
+
+    function addMarkersToMap(markers) {
+        markers.forEach(function(markerData) {
+            var marker = new google.maps.Marker({
+                position: {lat: markerData.lat, lng: markerData.lng},
+                map: map,
+                title: markerData.title
+            });
+
+            marker.addListener('click', function() {
+                // 关闭当前打开的信息窗口（如果有的话）
+                if (currentInfowindow) {
+                    currentInfowindow.close();
+                }
+
+                fetch(`/traffic-violation-details/${markerData.traffic_violation_id}`)
+                .then(response => response.json())
+                .then(details => {
+                    var currentImageIndex = 0;
+                    var images = details.media;
+
+                    var imageSrc = images.length > 0 ? '/media/' + images[currentImageIndex] : 'path/to/default/image.jpg';
+                    var infowindowContent = '<div><strong>' + details.title + '</strong><br>' +
+                                            '<img src="' + imageSrc + '" id="infowindow-img" style="width: 150px;"><br>' +
+                                            '<button onclick="showPreviousImage()">⬅️</button>' +
+                                            '<button onclick="showNextImage()">➡️</button><br>' +
+                                            '<p>车牌号: ' + details.license_plate + '</p>' +
+                                            '<p>违规日期: ' + details.date + '</p>' +
+                                            '<p>违规时间: ' + details.time + '</p>' +
+                                            '<p>违规类型: ' + details.violation + '</p>' +
+                                            '<p>状态: ' + details.status + '</p>' +
+                                            '<p>执法人员: ' + (details.officer || '无') + '</p>' +
+                                            '</div>';
+
+                    var infowindow = new google.maps.InfoWindow({
+                        content: infowindowContent
+                    });
+
+                    // 打开新的信息窗口并更新 currentInfowindow
+                    infowindow.open(map, marker);
+                    currentInfowindow = infowindow;
+
+                    window.showPreviousImage = function() {
+                        if (images.length > 1) {
+                            currentImageIndex = (currentImageIndex + images.length - 1) % images.length;
+                            document.getElementById('infowindow-img').src = '/media/' + images[currentImageIndex];
+                        }
+                    };
+
+                    window.showNextImage = function() {
+                        if (images.length > 1) {
+                            currentImageIndex = (currentImageIndex + 1) % images.length;
+                            document.getElementById('infowindow-img').src = '/media/' + images[currentImageIndex];
+                        }
+                    };
+                })
+                .catch(error => {
+                    console.error('Error fetching violation details:', error);
+                });
+            });
+
+            markersArray.push(marker);
+        });
+    }
+
+
+    // 页面加载完成后，调用initMap初始化地图
+    window.onload = initMap;
+</script>
+
+<!-- 引入 Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>
 
 {% endblock %}
