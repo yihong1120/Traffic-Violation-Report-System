@@ -10,8 +10,8 @@ A platform for users to upload and share the responses from law enforcement agen
     - [ ] registration with Gmail validation,
 - [ ] Log in with Google, Facebook, Twitter, Github account.
 - [ ] Attach the Llama2 model to the customer response bot.
-- [ ] Integrate the trained model from: https://github.com/yihong1120/YOLOv8-License-Plate-Detection to implement license plate recognition.
-- [ ] Use OCR techniques to automatically generate the parameters of traffic violations.
+- [ ] Integrate the [YOLOv8-License-Plate-Insights](https://github.com/yihong1120/YOLOv8-License-Plate-Insights) model to implement license plate recognition.
+- [x] Use OCR techniques to automatically generate the parameters of traffic violations.
 - [x] Design a SQL and BigQuery database on the cloud to store the information of violation, such as license plate, location, organiser(option), media, time.
 - [x] Pull the location on Google map.
 - [x] Leverage the Google Maps API to depict the location, number, and severity of traffic violations.
