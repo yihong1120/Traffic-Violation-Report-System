@@ -3,9 +3,9 @@
 {% block content %}
 <h2>Register</h2>
 
-<form method="post">
+<form method="post" id="registerForm">
     {% csrf_token %}
-    
+
     {% if form.errors %}
     <div class="alert alert-danger">
         <strong>错误:</strong> 请修正下列错误。
@@ -20,8 +20,49 @@
         {% endfor %}
     </ul>
     {% endif %}
-    
+
     {{ form.as_p }}
-    <button type="submit">Register</button>
+
+    <div id="username_error" class="error" style="color: red;"></div>
+    <div id="email_error" class="error" style="color: red;"></div>
+
+    <button type="submit" id="register-button">Register</button>
 </form>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+    $("#id_username, #id_email").blur(function(){
+        var username = $("#id_username").val();
+        var email = $("#id_email").val();
+        $.ajax({
+            url: '/validate-username-email/',
+            data: {
+                'username': username,
+                'email': email
+            },
+            dataType: 'json',
+            success: function (data) {
+                if(data.username_error){
+                    $("#username_error").text(data.username_error);
+                    $("#register-button").prop('disabled', true);
+                } else {
+                    $("#username_error").text('');
+                }
+
+                if(data.email_error){
+                    $("#email_error").text(data.email_error);
+                    $("#register-button").prop('disabled', true);
+                } else {
+                    $("#email_error").text('');
+                }
+
+                if (!data.username_error && !data.email_error) {
+                    $("#register-button").prop('disabled', false);
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

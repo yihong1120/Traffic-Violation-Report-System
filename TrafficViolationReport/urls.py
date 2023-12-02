@@ -38,6 +38,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('', report_views.home, name='home'),
     path('dashboard/', report_views.dashboard, name='dashboard'),
+    path('validate-username-email/', report_views.validate_username_email, name='validate-username-email'),
 ]
 
 # 在开发环境中服务媒体文件
