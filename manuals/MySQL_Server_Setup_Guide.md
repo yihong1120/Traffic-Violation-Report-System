@@ -1,3 +1,5 @@
+🇬🇧 [English](./MySQL_Server_Setup_Guide.md) | 🇹🇼 [繁體中文](./MySQL_Server_Setup_Guide-zh-tw.md)
+
 # MySQL Server Installation and Configuration Guide
 
 This guide will instruct you on how to install MySQL Server on an Ubuntu system and how to set up a new database and user.
