@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login
+from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
@@ -53,6 +54,19 @@ def login(request, *args, **kwargs):
     if request.user.is_authenticated:
         return redirect('home')
     return LoginView.as_view()(request, *args, **kwargs)
+
+def validate_username_email(request):
+    username = request.GET.get('username', None)
+    email = request.GET.get('email', None)
+
+    username_error = '這個用戶名已被使用' if User.objects.filter(username=username).exists() else None
+    email_error = '這個電子郵件地址已被使用' if User.objects.filter(email=email).exists() else None
+
+    data = {
+        'username_error': username_error,
+        'email_error': email_error
+    }
+    return JsonResponse(data)
 
 def register(request):
     if request.method == 'POST':
