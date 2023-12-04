@@ -22,7 +22,7 @@ from .bigquery_utils import (
     get_user_records,
     get_media_records,
     update_traffic_violation,
-    update_media_files
+    update_media_files,
 )
 
 def search_traffic_violations_view(request):
@@ -73,7 +73,7 @@ def register(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()  # 保存用戶模型實例
-            print("yes")
+
             # 為新用戶創建UserProfile實例，並生成一個隨機驗證碼
             code = generate_random_code()
             UserProfile.objects.create(user=user, email_verified_code=code)
