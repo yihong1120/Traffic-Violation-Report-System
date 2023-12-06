@@ -18,11 +18,17 @@ def get_user_records(username: str) -> List[Dict]:
         List[Dict]: A list of dictionaries, each representing a traffic violation record.
     """
     client = bigquery.Client()
-    query = (
-        f"SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation` "
-        f"WHERE username = '{username}'"
+    query = """
+        SELECT * 
+        FROM `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation` 
+        WHERE username = @username
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("username", "STRING", username)
+        ]
     )
-    query_job = client.query(query)
+    query_job = client.query(query, job_config=job_config)
     return [dict(row) for row in query_job.result()]
 
 def get_media_records() -> List[Dict]:
@@ -142,63 +148,66 @@ def search_traffic_violations(request: HttpRequest) -> JsonResponse:
     client = bigquery.Client()
 
     # Fetch GET parameters from the request
-    keyword: str = request.GET.get('keyword', '')
-    time_range: str = request.GET.get('timeRange', 'all')
-    from_date: str = request.GET.get('fromDate', '')
-    to_date: str = request.GET.get('toDate', '')
+    keyword: str = request.GET.get('keyword', '')  # Get the 'keyword' parameter from the request
+    time_range: str = request.GET.get('timeRange', 'all')  # Get the 'timeRange' parameter with a default value of 'all'
+    from_date: str = request.GET.get('fromDate', '')  # Get the 'fromDate' parameter from the request
+    to_date: str = request.GET.get('toDate', '')  # Get the 'toDate' parameter from the request
 
-    # Build WHERE clauses based on the provided time range
-    where_clauses: List[str] = []
+    # Define the base SQL query
+    query = """
+        SELECT license_plate, date, time, violation, status, location, traffic_violation_id
+        FROM `traffic_violation_db.reports_trafficviolation`
+        WHERE TRUE
+    """
+
+    # Initialise a list to hold query parameters
+    params = []
+
+    # Check if a specific time range is selected
     if time_range != 'all':
-        # Process the time range
-        if time_range == 'custom':
-            where_clauses.append(f"DATE(date) BETWEEN '{from_date}' AND '{to_date}'")
+        current_date: datetime.date = datetime.datetime.now().date()
+        date_from = None
+        
+        # Calculate the date range based on the selected time range
+        if time_range == '1day':
+            date_from = current_date - datetime.timedelta(days=1)
+        elif time_range == '1week':
+            date_from = current_date - datetime.timedelta(weeks=1)
+        elif time_range == '1month':
+            date_from = current_date - datetime.timedelta(days=30)
+        elif time_range == '6months':
+            date_from = current_date - datetime.timedelta(days=30*6)
+        elif time_range == '1year':
+            date_from = current_date - datetime.timedelta(days=365)
+        elif time_range == 'custom':
+            date_from = from_date
+            to_date = to_date
+
+        # Add date filters to the query
+        if time_range != 'custom':
+            query += " AND DATE(date) >= @date_from"
+            params.append(bigquery.ScalarQueryParameter('date_from', 'DATE', date_from))
         else:
-            # Get the current date
-            current_date: datetime.date = datetime.datetime.now().date()
+            query += " AND DATE(date) BETWEEN @from_date AND @to_date"
+            params.append(bigquery.ScalarQueryParameter('from_date', 'DATE', from_date))
+            params.append(bigquery.ScalarQueryParameter('to_date', 'DATE', to_date))
 
-            # Calculate the date range
-            if time_range == '1day':
-                date_from = current_date - datetime.timedelta(days=1)
-                where_clauses.append(f"DATE(date) = '{date_from}'")
-            elif time_range == '1week':
-                date_from = current_date - datetime.timedelta(weeks=1)
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == '1month':
-                date_from = current_date - datetime.timedelta(days=30)  # 假设每个月30天
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == '6months':
-                date_from = current_date - datetime.timedelta(days=30*6)  # 假设每个月30天
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == '1year':
-                date_from = current_date - datetime.timedelta(days=365)  # 假设每年365天
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == 'custom':
-                where_clauses.append(f"DATE(date) BETWEEN '{from_date}' AND '{to_date}'")
-
-    # Process the keyword for filtering
+    # Check if a keyword is provided for filtering
     if keyword:
-        where_clauses.append(
-            f"(license_plate LIKE '%{keyword}%' OR "
-            f"violation LIKE '%{keyword}%' OR "
-            f"location LIKE '%{keyword}%')"
-        )
+        query += """
+            AND (license_plate LIKE CONCAT('%', @keyword, '%')
+            OR violation LIKE CONCAT('%', @keyword, '%')
+            OR location LIKE CONCAT('%', @keyword, '%'))
+        """
+        params.append(bigquery.ScalarQueryParameter('keyword', 'STRING', keyword))
 
-    # Construct the complete SQL query
-    where_clause: str = ' AND '.join(where_clauses) if where_clauses else 'TRUE'
-    query: str = (
-        f"SELECT license_plate, date, time, violation, status, location, traffic_violation_id "
-        f"FROM `traffic_violation_db.reports_trafficviolation` "
-        f"WHERE {where_clause}"
-    )
-
-    # Execute the query
-    query_job = client.query(query)
+    # Configure the BigQuery job
+    job_config = bigquery.QueryJobConfig(query_parameters=params)
+    query_job = client.query(query, job_config=job_config)
     results = query_job.result()
 
-    # Build the response data
-    data: List[Dict[str, str]] = [
-        {
+    # Create a list of dictionaries containing query results
+    data = [{
             'lat': float(location.split(',')[0]),
             'lng': float(location.split(',')[1]),
             'title': f'{license_plate} - {violation}',
@@ -209,9 +218,6 @@ def search_traffic_violations(request: HttpRequest) -> JsonResponse:
         for row in results
         for license_plate, date, time, violation, status, location, traffic_violation_id in [(row.license_plate, row.date, row.time, row.violation, row.status, row.location, row.traffic_violation_id)]
     ]
-
-    # Log the data for debugging purposes
-    print(f"data: {data}")
 
     # Return the data as a JSON response
     return JsonResponse(data, safe=False)
