@@ -1,9 +1,9 @@
-Django==4.2.7
+Django==5.0
 django_multiupload==0.6.1
-numpy==1.26.1
+numpy==1.26.2
 pytz==2023.3.post1
 django-allauth==0.58.2
 mysqlclient==2.2.0
 google-cloud-bigquery==3.13.0
 googlemaps==4.10.0
-ultralytics=8.0.221
+ultralytics=8.0.222
