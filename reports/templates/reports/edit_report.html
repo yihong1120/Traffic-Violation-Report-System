@@ -24,8 +24,27 @@
             <!-- 表单用于编辑记录 -->
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-primary">保存更改</button>
+                
+                {# 其他字段的渲染 #}
+                {{ form.license_plate.label_tag }}: {{ form.license_plate }}<br>
+                {{ form.date.label_tag }}: {{ form.date }}<br>
+                {{ form.violation.label_tag }}: {{ form.violation }}<br>
+                {{ form.status.label_tag }}: {{ form.status }}<br>
+                {{ form.location.label_tag }}: {{ form.location }}<br>
+                {{ form.officer.label_tag }}: {{ form.officer }}<br>
+                <!-- {{ form.media.label_tag }}: {{ form.media }}<br> -->
+          
+                {# 小時和分鐘字段的渲染 #}
+                時間: {{ form.hour }} : {{ form.minute }}<br>
+                
+                {{ form.media.label_tag }}: 
+                <input type="file" name="media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
+                <button type="button" id="add-media-button">保存修改</button><br>
+                
+                <!-- File Preview Container -->
+                <div id="file-preview-container"></div>
+          
+                <button type="submit">提交</button>
             </form>
             {% else %}
             <p>请选择一个记录进行编辑。</p>
@@ -33,4 +52,160 @@
         </div>
     </div>
 </div>
+
+<script>
+    var customFileList = []; // Custom file list
+    document.getElementById('add-media-button').addEventListener('click', function() {
+      document.getElementById('media-input').click();
+    });
+
+    document.getElementById('media-input').addEventListener('change', function(e) {
+      Array.from(e.target.files).forEach(file => {
+        customFileList.push(file);
+        createPreview(file);
+      });
+      updateFormFiles();
+    });
+
+    function createPreview(file) {
+      let previewContainer = document.getElementById('file-preview-container');
+      let previewDiv = document.createElement('div');
+      previewDiv.classList.add('file-preview');
+      previewDiv.dataset.fileName = file.name;
+
+      // 创建用于显示文件的元素，根据文件类型判断是图片还是视频
+      let mediaElement;
+      if (file.type.startsWith('image/')) {
+        mediaElement = new Image();
+        mediaElement.height = 100;
+      } else if (file.type.startsWith('video/')) {
+        mediaElement = document.createElement('video');
+        mediaElement.height = 100;
+        mediaElement.controls = true;
+      }
+
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        mediaElement.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      // 创建移除按钮
+      let removeButton = document.createElement('button');
+      removeButton.innerText = 'X';
+      removeButton.classList.add('remove-button');
+      removeButton.onclick = function() {
+        removeFile(file.name);
+        previewDiv.remove();
+      };
+
+      // 创建进度条
+      let progressBar = document.createElement('progress');
+      progressBar.value = 0;
+      progressBar.max = 100;
+      progressBar.classList.add('progress-bar');
+      progressBar.dataset.fileName = file.name; // 用于识别对应的进度条
+
+      // 将元素添加到预览div中
+      previewDiv.appendChild(mediaElement);
+      previewDiv.appendChild(removeButton);
+      previewDiv.appendChild(progressBar); // 将进度条添加到预览div
+
+      // 将预览div添加到容器中
+      previewContainer.appendChild(previewDiv);
+    }
+
+    function removeFile(fileName) {
+      customFileList = customFileList.filter(file => file.name !== fileName);
+      updateFormFiles();
+    }
+
+    function updateFormFiles() {
+      let dataTransfer = new DataTransfer();
+      customFileList.forEach(file => dataTransfer.items.add(file));
+      document.getElementById('media-input').files = dataTransfer.files;
+    }
+
+    document.getElementById('submit-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      customFileList.forEach(file => {
+        uploadFile(file);
+      });
+    });
+
+    function uploadFile(file) {
+        let formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', '{% url "file_upload" %}', true);
+
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                let percentComplete = (e.loaded / e.total) * 100;
+                updateProgressBar(file.name, percentComplete);
+            }
+        };
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                console.log('Upload complete:', xhr.responseText);
+            } else {
+                console.error('Upload failed:', xhr.responseText);
+            }
+        };
+
+        xhr.send(formData);
+    }
+
+    function updateProgressBar(fileName, progress) {
+      // 找到所有进度条
+      let allProgressBars = document.querySelectorAll('.progress-bar');
+      // 遍历进度条找到对应的
+      allProgressBars.forEach(bar => {
+        if (bar.dataset.fileName === fileName) {
+          bar.value = progress; // 更新进度
+        }
+      });
+    }
+</script>
+
+<style>
+    #file-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .file-preview {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 5px;
+    }
+
+    .file-preview img {
+      display: block;
+    }
+
+    .file-preview .remove-button {
+      position: absolute;
+      top: -10px;  /* Adjust as needed */
+      right: -10px; /* Adjust as needed */
+      background-color: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 50%;
+      padding: 0 5px;
+    }
+
+    .progress-bar {
+      width: 100%; /* 宽度可以根据需要调整 */
+      margin-top: 5px;
+    }
+</style>
 {% endblock %}
