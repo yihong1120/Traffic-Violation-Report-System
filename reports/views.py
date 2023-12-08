@@ -131,6 +131,7 @@ def edit_report(request):
     selected_record_id = request.GET.get('record_id')
     if selected_record_id:
         selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
+        print(f"selected_record: {selected_record}")
         if selected_record:
             form = ReportForm(initial=selected_record)
             if request.method == 'POST':
