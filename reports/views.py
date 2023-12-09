@@ -118,44 +118,37 @@ def verify(request):
 def edit_report(request):
     username = request.user.username
 
-    # 从 BigQuery 获取当前用户的提交记录和媒体文件记录
+    # 从 BigQuery 获取当前用户的提交记录
     user_records = get_user_records(username)
-    media_records = get_media_records()
 
-    # 将媒体文件匹配到相应的违规记录中
-    for record in user_records:
-        record_media = [media['file'] for media in media_records if media['traffic_violation_id'] == record['traffic_violation_id']]
-        record['media'] = record_media
-
-    # 如果用户选择编辑特定的记录
     selected_record_id = request.GET.get('record_id')
+    selected_record = None
+    form = None
+
     if selected_record_id:
+        # 获取特定记录
         selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
-        print(f"selected_record: {selected_record}")
+
         if selected_record:
+            # 仅为选定的记录加载媒体文件
+            selected_record['media'] = get_media_records(selected_record_id)
+
+            print(f"selected_record: {selected_record}")
             form = ReportForm(initial=selected_record)
+
             if request.method == 'POST':
                 form = ReportForm(request.POST, request.FILES)
                 if form.is_valid():
                     data = form.cleaned_data
-
-                    # 更新 BigQuery 中的记录
                     update_traffic_violation(data, selected_record_id)
-
-                    # 处理媒体文件上传和更新
                     media_files = request.FILES.getlist('media')
                     update_media_files(selected_record_id, media_files)
-
                     messages.success(request, "记录和媒体文件已成功更新。")
                     return redirect('edit_report')
-        else:
-            form = None
-    else:
-        form = None
 
     context = {
         'user_records': user_records,
-        'selected_record': selected_record if selected_record_id else None,
+        'selected_record': selected_record,
         'form': form,
     }
     return render(request, 'reports/edit_report.html', context)

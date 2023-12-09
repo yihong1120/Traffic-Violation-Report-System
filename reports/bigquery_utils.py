@@ -31,22 +31,22 @@ def get_user_records(username: str) -> List[Dict]:
     query_job = client.query(query, job_config=job_config)
     return [dict(row) for row in query_job.result()]
 
-def get_media_records() -> List[Dict]:
+def get_media_records(record_id: int) -> List[Dict]:
     """
-    Retrieve all media records from BigQuery.
-
-    This function fetches media file information related to traffic violations
-    from the BigQuery table. It's limited to a maximum of 1000 records for performance.
-
-    Returns:
-        List[Dict]: A list of dictionaries, each representing a media file record.
+    Retrieve media records for a specific traffic violation record from BigQuery.
     """
     client = bigquery.Client()
-    media_query = (
-        "SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` "
-        "LIMIT 1000"
+    media_query = """
+        SELECT * 
+        FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` 
+        WHERE traffic_violation_id = @record_id
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("record_id", "INT64", record_id)
+        ]
     )
-    media_query_job = client.query(media_query)
+    media_query_job = client.query(media_query, job_config=job_config)
     return [dict(row) for row in media_query_job.result()]
 
 def update_traffic_violation(data: Dict, selected_record_id: str):
