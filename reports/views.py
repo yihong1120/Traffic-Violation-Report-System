@@ -8,6 +8,7 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
+from datetime import datetime
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
@@ -117,8 +118,6 @@ def verify(request):
 @login_required
 def edit_report(request):
     username = request.user.username
-
-    # 从 BigQuery 获取当前用户的提交记录
     user_records = get_user_records(username)
 
     selected_record_id = request.GET.get('record_id')
@@ -126,15 +125,28 @@ def edit_report(request):
     form = None
 
     if selected_record_id:
-        # 获取特定记录
         selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
 
         if selected_record:
-            # 仅为选定的记录加载媒体文件
             selected_record['media'] = get_media_records(selected_record_id)
 
-            print(f"selected_record: {selected_record}")
-            form = ReportForm(initial=selected_record)
+            # 提取小时和分钟
+            hour = selected_record['time'].hour
+            minute = selected_record['time'].minute
+
+            # 使用 initial 参数设置表单字段的初始值
+            initial_data = {
+                'license_plate': selected_record['license_plate'],
+                'date': selected_record['date'],
+                'hour': hour,  # 设置小时
+                'minute': minute,  # 设置分钟
+                'violation': selected_record['violation'],
+                'status': selected_record['status'],
+                'location': selected_record['location'],
+                'officer': selected_record['officer'] if selected_record['officer'] else "",
+            }
+
+            form = ReportForm(initial=initial_data)
 
             if request.method == 'POST':
                 form = ReportForm(request.POST, request.FILES)
