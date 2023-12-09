@@ -8,6 +8,7 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
+from datetime import datetime
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
@@ -117,44 +118,49 @@ def verify(request):
 @login_required
 def edit_report(request):
     username = request.user.username
-
-    # 从 BigQuery 获取当前用户的提交记录和媒体文件记录
     user_records = get_user_records(username)
-    media_records = get_media_records()
 
-    # 将媒体文件匹配到相应的违规记录中
-    for record in user_records:
-        record_media = [media['file'] for media in media_records if media['traffic_violation_id'] == record['traffic_violation_id']]
-        record['media'] = record_media
-
-    # 如果用户选择编辑特定的记录
     selected_record_id = request.GET.get('record_id')
+    selected_record = None
+    form = None
+
     if selected_record_id:
         selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
+
         if selected_record:
-            form = ReportForm(initial=selected_record)
+            selected_record['media'] = get_media_records(selected_record_id)
+
+            # 提取小时和分钟
+            hour = selected_record['time'].hour
+            minute = selected_record['time'].minute
+
+            # 使用 initial 参数设置表单字段的初始值
+            initial_data = {
+                'license_plate': selected_record['license_plate'],
+                'date': selected_record['date'],
+                'hour': hour,  # 设置小时
+                'minute': minute,  # 设置分钟
+                'violation': selected_record['violation'],
+                'status': selected_record['status'],
+                'location': selected_record['location'],
+                'officer': selected_record['officer'] if selected_record['officer'] else "",
+            }
+
+            form = ReportForm(initial=initial_data)
+
             if request.method == 'POST':
                 form = ReportForm(request.POST, request.FILES)
                 if form.is_valid():
                     data = form.cleaned_data
-
-                    # 更新 BigQuery 中的记录
                     update_traffic_violation(data, selected_record_id)
-
-                    # 处理媒体文件上传和更新
                     media_files = request.FILES.getlist('media')
                     update_media_files(selected_record_id, media_files)
-
                     messages.success(request, "记录和媒体文件已成功更新。")
                     return redirect('edit_report')
-        else:
-            form = None
-    else:
-        form = None
 
     context = {
         'user_records': user_records,
-        'selected_record': selected_record if selected_record_id else None,
+        'selected_record': selected_record,
         'form': form,
     }
     return render(request, 'reports/edit_report.html', context)
