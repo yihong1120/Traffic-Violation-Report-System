@@ -8,6 +8,7 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
+import os
 from datetime import datetime
 from .forms import CustomUserCreationForm
 from .forms import ReportForm
@@ -123,13 +124,14 @@ def edit_report(request):
     selected_record_id = request.GET.get('record_id')
     selected_record = None
     form = None
+    media_urls = []  # 初始化 media_urls 为空列表
 
     if selected_record_id:
         selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
 
         if selected_record:
             selected_record['media'] = get_media_records(selected_record_id)
-
+            print(f"selected_record['media']: {selected_record['media']}")
             # 提取小时和分钟
             hour = selected_record['time'].hour
             minute = selected_record['time'].minute
@@ -158,10 +160,15 @@ def edit_report(request):
                     messages.success(request, "记录和媒体文件已成功更新。")
                     return redirect('edit_report')
 
+            # 构建媒体文件的完整 URL
+            media_urls = [os.path.join(settings.MEDIA_URL, media['file']) for media in selected_record['media']]
+    
+    # 将 context 定义移到 if 语句之外
     context = {
         'user_records': user_records,
         'selected_record': selected_record,
         'form': form,
+        'media_urls': media_urls,  # 添加媒体文件 URL 到上下文
     }
     return render(request, 'reports/edit_report.html', context)
 
