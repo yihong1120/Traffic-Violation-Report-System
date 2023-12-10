@@ -62,6 +62,9 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
     """
     client = bigquery.Client()
 
+    #Convert string to integer
+    selected_record_id_int = int(selected_record_id)
+
     # Construct the update statement and parameters
     update_query = """
         UPDATE `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation`
