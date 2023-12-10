@@ -3,6 +3,10 @@ from django.http import JsonResponse, HttpRequest
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from google.cloud import bigquery
 import datetime
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+import os
+import uuid
 
 def get_user_records(username: str) -> List[Dict]:
     """
@@ -94,7 +98,7 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
     # Execute the update
     client.query(update_query, job_config=job_config).result()
 
-def update_media_files(selected_record_id: str, media_files: List[InMemoryUploadedFile]):
+def update_media_files(selected_record_id: str, new_media_files: List[InMemoryUploadedFile], removed_media: List[str]):
     """
     Update media files associated with a specific traffic violation record in BigQuery.
 
@@ -107,26 +111,32 @@ def update_media_files(selected_record_id: str, media_files: List[InMemoryUpload
     """
     client = bigquery.Client()
 
-    # Delete existing media files
-    delete_query = """
-        DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
-        WHERE traffic_violation_id = @traffic_violation_id
-    """
-    delete_params = [
-        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
-    ]
-    delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
-    client.query(delete_query, delete_job_config).result()
+    # 將 selected_record_id 轉換為整數
+    selected_record_id_int = int(selected_record_id)
 
-    # Insert new media files
-    for media_file in media_files:
+    # 處理刪除的媒體文件
+    for media_url in removed_media:
+        if media_url:
+            delete_query = """
+                DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
+                WHERE file = @file
+            """
+            delete_params = [
+                bigquery.ScalarQueryParameter("file", "STRING", media_url),
+            ]
+            delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
+            client.query(delete_query, delete_job_config).result()
+
+    # 處理新增的媒體文件
+    for filename in new_media_files:
+        # 插入数据库记录
         insert_query = """
             INSERT INTO `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` (file, traffic_violation_id)
             VALUES (@file, @traffic_violation_id)
         """
         insert_params = [
-            bigquery.ScalarQueryParameter("file", "STRING", media_file.name),
-            bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+            bigquery.ScalarQueryParameter("file", "STRING", filename),
+            bigquery.ScalarQueryParameter("traffic_violation_id", "INT64", selected_record_id_int),
         ]
         insert_job_config = bigquery.QueryJobConfig(query_parameters=insert_params)
         client.query(insert_query, insert_job_config).result()

@@ -55,6 +55,7 @@
                       </video>
                       {% endif %}
                       <!-- 可以添加删除按钮或其他逻辑 -->
+                      <button type="button" class="remove-button" onclick="removePreloadedMedia('{{ media_url }}')">X</button>
                   </div>
                   {% endfor %}
                 </div>
@@ -182,6 +183,26 @@
           bar.value = progress; // 更新进度
         }
       });
+    }
+
+    function removePreloadedMedia(mediaUrl) {
+      // 從界面中刪除
+      let previewContainer = document.getElementById('file-preview-container');
+      let mediaDiv = previewContainer.querySelector(`[data-file-url="${mediaUrl}"]`);
+      if (mediaDiv) {
+        previewContainer.removeChild(mediaDiv);
+      }
+
+      // 將刪除的媒體URL添加到一個隱藏的輸入框中，以便在提交表單時處理
+      let removedMediaInput = document.getElementById('removed-media');
+      if (!removedMediaInput) {
+        removedMediaInput = document.createElement('input');
+        removedMediaInput.type = 'hidden';
+        removedMediaInput.id = 'removed-media';
+        removedMediaInput.name = 'removed_media';
+        document.forms[0].appendChild(removedMediaInput);
+      }
+      removedMediaInput.value += mediaUrl + ';';
     }
 </script>
 

@@ -8,6 +8,8 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+import uuid
 import os
 from datetime import datetime
 from .forms import CustomUserCreationForm
@@ -131,17 +133,14 @@ def edit_report(request):
 
         if selected_record:
             selected_record['media'] = get_media_records(selected_record_id)
-            print(f"selected_record['media']: {selected_record['media']}")
-            # 提取小时和分钟
             hour = selected_record['time'].hour
             minute = selected_record['time'].minute
 
-            # 使用 initial 参数设置表单字段的初始值
             initial_data = {
                 'license_plate': selected_record['license_plate'],
                 'date': selected_record['date'],
-                'hour': hour,  # 设置小时
-                'minute': minute,  # 设置分钟
+                'hour': hour,
+                'minute': minute,
                 'violation': selected_record['violation'],
                 'status': selected_record['status'],
                 'location': selected_record['location'],
@@ -155,20 +154,29 @@ def edit_report(request):
                 if form.is_valid():
                     data = form.cleaned_data
                     update_traffic_violation(data, selected_record_id)
-                    media_files = request.FILES.getlist('media')
-                    update_media_files(selected_record_id, media_files)
+                    
+                    fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                    saved_files = []
+
+                    for media_file in request.FILES.getlist('media'):
+                        _, file_extension = os.path.splitext(media_file.name)
+                        unique_filename = str(uuid.uuid4()) + file_extension
+                        fs.save(unique_filename, media_file)
+                        saved_files.append(unique_filename)
+
+                    removed_media = request.POST.get('removed_media', '').split(';')
+                    update_media_files(selected_record_id, saved_files, removed_media)
+
                     messages.success(request, "记录和媒体文件已成功更新。")
                     return redirect('edit_report')
 
-            # 构建媒体文件的完整 URL
             media_urls = [os.path.join(settings.MEDIA_URL, media['file']) for media in selected_record['media']]
-    
-    # 将 context 定义移到 if 语句之外
+
     context = {
         'user_records': user_records,
         'selected_record': selected_record,
         'form': form,
-        'media_urls': media_urls,  # 添加媒体文件 URL 到上下文
+        'media_urls': media_urls,
     }
     return render(request, 'reports/edit_report.html', context)
 
