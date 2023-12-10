@@ -47,9 +47,9 @@
                   {% for media_url in media_urls %}
                   <div class="file-preview">
                       <!-- 检查文件扩展名并显示适当的预览 -->
-                      {% if '.jpg' in media_url or '.jpeg' in media_url or '.png' in media_url or '.gif' in media_url %}
+                      {% if '.jpg' in media_url or '.jpeg' in media_url or '.png' in media_url or '.gif' in media_url or '.JPG' in media_url or '.JEPG' in media_url %}
                       <img src="{{ media_url }}" height="100">
-                      {% elif '.mp4' in media_url %}
+                      {% elif '.mp4' in media_url or '.mov' in media_url or '.wmv' in media_url %}
                       <video height="100" controls>
                           <source src="{{ media_url }}" type="video/mp4">
                       </video>
