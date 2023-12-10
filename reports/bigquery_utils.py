@@ -3,10 +3,6 @@ from django.http import JsonResponse, HttpRequest
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from google.cloud import bigquery
 import datetime
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
-import os
-import uuid
 
 def get_user_records(username: str) -> List[Dict]:
     """
@@ -100,23 +96,25 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
 
 def update_media_files(selected_record_id: str, new_media_files: List[InMemoryUploadedFile], removed_media: List[str]):
     """
-    Update media files associated with a specific traffic violation record in BigQuery.
+    Updates media files associated with a specific traffic violation record in BigQuery.
 
-    This function first deletes any existing media files associated with the traffic violation
-    record and then inserts the new media file information.
+    This function first deletes any existing media files linked to the traffic violation record 
+    and then inserts the information for the new media files.
 
     Args:
         selected_record_id (str): The ID of the traffic violation record.
-        media_files (List[InMemoryUploadedFile]): A list of media files to be associated with the record.
+        new_media_files (List[InMemoryUploadedFile]): A list of new media files to be associated with the record.
+        removed_media (List[str]): A list of URLs of media files to be removed.
     """
     client = bigquery.Client()
 
-    # 將 selected_record_id 轉換為整數
+    # Converting the selected record ID to an integer for BigQuery compatibility
     selected_record_id_int = int(selected_record_id)
 
-    # 處理刪除的媒體文件
+    # Processing the deletion of existing media files
     for media_url in removed_media:
         if media_url:
+            # Constructing the delete query for BigQuery
             delete_query = """
                 DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
                 WHERE file = @file
@@ -125,11 +123,12 @@ def update_media_files(selected_record_id: str, new_media_files: List[InMemoryUp
                 bigquery.ScalarQueryParameter("file", "STRING", media_url),
             ]
             delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
+            # Executing the delete query
             client.query(delete_query, delete_job_config).result()
 
-    # 處理新增的媒體文件
+    # Processing the addition of new media files
     for filename in new_media_files:
-        # 插入数据库记录
+        # Constructing the insert query for BigQuery
         insert_query = """
             INSERT INTO `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` (file, traffic_violation_id)
             VALUES (@file, @traffic_violation_id)
@@ -139,6 +138,7 @@ def update_media_files(selected_record_id: str, new_media_files: List[InMemoryUp
             bigquery.ScalarQueryParameter("traffic_violation_id", "INT64", selected_record_id_int),
         ]
         insert_job_config = bigquery.QueryJobConfig(query_parameters=insert_params)
+        # Executing the insert query
         client.query(insert_query, insert_job_config).result()
 
 def search_traffic_violations(request: HttpRequest) -> JsonResponse:
