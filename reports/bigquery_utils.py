@@ -62,6 +62,9 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
     """
     client = bigquery.Client()
 
+    #Convert string to integer
+    selected_record_id_int = int(selected_record_id)
+
     # Construct the update statement and parameters
     update_query = """
         UPDATE `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation`
@@ -83,7 +86,7 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
         bigquery.ScalarQueryParameter("status", "STRING", data['status']),
         bigquery.ScalarQueryParameter("location", "STRING", data['location']),
         bigquery.ScalarQueryParameter("officer", "STRING", data['officer']),
-        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+        bigquery.ScalarQueryParameter("traffic_violation_id", "INT64", selected_record_id_int),
     ]
 
     job_config = bigquery.QueryJobConfig(query_parameters=params)
@@ -91,41 +94,51 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
     # Execute the update
     client.query(update_query, job_config=job_config).result()
 
-def update_media_files(selected_record_id: str, media_files: List[InMemoryUploadedFile]):
+def update_media_files(selected_record_id: str, new_media_files: List[InMemoryUploadedFile], removed_media: List[str]):
     """
-    Update media files associated with a specific traffic violation record in BigQuery.
+    Updates media files associated with a specific traffic violation record in BigQuery.
 
-    This function first deletes any existing media files associated with the traffic violation
-    record and then inserts the new media file information.
+    This function first deletes any existing media files linked to the traffic violation record 
+    and then inserts the information for the new media files.
 
     Args:
         selected_record_id (str): The ID of the traffic violation record.
-        media_files (List[InMemoryUploadedFile]): A list of media files to be associated with the record.
+        new_media_files (List[InMemoryUploadedFile]): A list of new media files to be associated with the record.
+        removed_media (List[str]): A list of URLs of media files to be removed.
     """
     client = bigquery.Client()
 
-    # Delete existing media files
-    delete_query = """
-        DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
-        WHERE traffic_violation_id = @traffic_violation_id
-    """
-    delete_params = [
-        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
-    ]
-    delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
-    client.query(delete_query, delete_job_config).result()
+    # Converting the selected record ID to an integer for BigQuery compatibility
+    selected_record_id_int = int(selected_record_id)
 
-    # Insert new media files
-    for media_file in media_files:
+    # Processing the deletion of existing media files
+    for media_url in removed_media:
+        if media_url:
+            # Constructing the delete query for BigQuery
+            delete_query = """
+                DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
+                WHERE file = @file
+            """
+            delete_params = [
+                bigquery.ScalarQueryParameter("file", "STRING", media_url),
+            ]
+            delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
+            # Executing the delete query
+            client.query(delete_query, delete_job_config).result()
+
+    # Processing the addition of new media files
+    for filename in new_media_files:
+        # Constructing the insert query for BigQuery
         insert_query = """
             INSERT INTO `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` (file, traffic_violation_id)
             VALUES (@file, @traffic_violation_id)
         """
         insert_params = [
-            bigquery.ScalarQueryParameter("file", "STRING", media_file.name),
-            bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+            bigquery.ScalarQueryParameter("file", "STRING", filename),
+            bigquery.ScalarQueryParameter("traffic_violation_id", "INT64", selected_record_id_int),
         ]
         insert_job_config = bigquery.QueryJobConfig(query_parameters=insert_params)
+        # Executing the insert query
         client.query(insert_query, insert_job_config).result()
 
 def search_traffic_violations(request: HttpRequest) -> JsonResponse:

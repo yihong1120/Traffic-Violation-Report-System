@@ -38,12 +38,27 @@
                 時間: {{ form.hour }} : {{ form.minute }}<br>
                 
                 {{ form.media.label_tag }}: 
+                <!-- 上传新媒体文件的界面 -->
                 <input type="file" name="media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
                 <button type="button" id="add-media-button">新增</button><br>
-                
+                                
                 <!-- File Preview Container -->
-                <div id="file-preview-container"></div>
-          
+                <div id="file-preview-container">
+                  {% for media_url in media_urls %}
+                  <div class="file-preview">
+                      <!-- 检查文件扩展名并显示适当的预览 -->
+                      {% if '.jpg' in media_url or '.jpeg' in media_url or '.png' in media_url or '.gif' in media_url or '.JPG' in media_url or '.JEPG' in media_url %}
+                      <img src="{{ media_url }}" height="100">
+                      {% elif '.mp4' in media_url or '.mov' in media_url or '.wmv' in media_url %}
+                      <video height="100" controls>
+                          <source src="{{ media_url }}" type="video/mp4">
+                      </video>
+                      {% endif %}
+                      <!-- 可以添加删除按钮或其他逻辑 -->
+                      <button type="button" class="remove-button" onclick="removePreloadedMedia('{{ media_url }}')">X</button>
+                  </div>
+                  {% endfor %}
+                </div>
                 <button type="submit">保存修改</button>
             </form>
             {% else %}
@@ -168,6 +183,26 @@
           bar.value = progress; // 更新进度
         }
       });
+    }
+
+    function removePreloadedMedia(mediaUrl) {
+      // 從界面中刪除
+      let previewContainer = document.getElementById('file-preview-container');
+      let mediaDiv = previewContainer.querySelector(`[data-file-url="${mediaUrl}"]`);
+      if (mediaDiv) {
+        previewContainer.removeChild(mediaDiv);
+      }
+
+      // 將刪除的媒體URL添加到一個隱藏的輸入框中，以便在提交表單時處理
+      let removedMediaInput = document.getElementById('removed-media');
+      if (!removedMediaInput) {
+        removedMediaInput = document.createElement('input');
+        removedMediaInput.type = 'hidden';
+        removedMediaInput.id = 'removed-media';
+        removedMediaInput.name = 'removed_media';
+        document.forms[0].appendChild(removedMediaInput);
+      }
+      removedMediaInput.value += mediaUrl + ';';
     }
 </script>
 
