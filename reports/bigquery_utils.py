@@ -86,7 +86,7 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
         bigquery.ScalarQueryParameter("status", "STRING", data['status']),
         bigquery.ScalarQueryParameter("location", "STRING", data['location']),
         bigquery.ScalarQueryParameter("officer", "STRING", data['officer']),
-        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+        bigquery.ScalarQueryParameter("traffic_violation_id", "INT64", selected_record_id_int),
     ]
 
     job_config = bigquery.QueryJobConfig(query_parameters=params)
