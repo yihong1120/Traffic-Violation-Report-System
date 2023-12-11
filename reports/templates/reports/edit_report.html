@@ -40,6 +40,7 @@
                 {{ form.media.label_tag }}: 
                 <!-- 上传新媒体文件的界面 -->
                 <input type="file" name="media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
+                <!-- <input type="hidden" id="removed-media" name="removed_media"> -->
                 <button type="button" id="add-media-button">新增</button><br>
                                 
                 <!-- File Preview Container -->
@@ -59,7 +60,8 @@
                   </div>
                   {% endfor %}
                 </div>
-                <button type="submit">保存修改</button>
+                <button type="submit" id="submit-button">保存修改</button>
+                <input type="hidden" id="removed-media" name="removed_media">
             </form>
             {% else %}
             <p>请选择一个记录进行编辑。</p>
@@ -69,17 +71,25 @@
 </div>
 
 <script>
-    var customFileList = []; // Custom file list
-    document.getElementById('add-media-button').addEventListener('click', function() {
-      document.getElementById('media-input').click();
-    });
+    // 定义全局变量用于存储上传的文件
+    var customFileList = [];
 
-    document.getElementById('media-input').addEventListener('change', function(e) {
-      Array.from(e.target.files).forEach(file => {
-        customFileList.push(file);
-        createPreview(file);
-      });
-      updateFormFiles();
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('add-media-button').addEventListener('click', function () {
+            document.getElementById('media-input').click();
+        });
+
+        document.getElementById('media-input').addEventListener('change', function (e) {
+            Array.from(e.target.files).forEach(file => {
+                customFileList.push(file);
+                createPreview(file);
+            });
+        });
+
+        document.getElementById('submit-button').addEventListener('click', function (e) {
+            e.preventDefault();
+            submitFormWithAjax();
+        });
     });
 
     function createPreview(file) {
@@ -186,23 +196,60 @@
     }
 
     function removePreloadedMedia(mediaUrl) {
-      // 從界面中刪除
+      console.log("Removing media:", mediaUrl);
+      // 從界面中刪除預覽
       let previewContainer = document.getElementById('file-preview-container');
       let mediaDiv = previewContainer.querySelector(`[data-file-url="${mediaUrl}"]`);
       if (mediaDiv) {
-        previewContainer.removeChild(mediaDiv);
+          previewContainer.removeChild(mediaDiv);
       }
 
-      // 將刪除的媒體URL添加到一個隱藏的輸入框中，以便在提交表單時處理
+      // 將刪除的媒體 URL 添加到隱藏的表單輸入框中
       let removedMediaInput = document.getElementById('removed-media');
       if (!removedMediaInput) {
-        removedMediaInput = document.createElement('input');
-        removedMediaInput.type = 'hidden';
-        removedMediaInput.id = 'removed-media';
-        removedMediaInput.name = 'removed_media';
-        document.forms[0].appendChild(removedMediaInput);
+          removedMediaInput = document.createElement('input');
+          removedMediaInput.type = 'hidden';
+          removedMediaInput.id = 'removed-media';
+          removedMediaInput.name = 'removed_media';
+          document.forms[0].appendChild(removedMediaInput);
       }
-      removedMediaInput.value += mediaUrl + ';';
+
+      if (removedMediaInput.value) {
+          removedMediaInput.value += ';';
+      }
+      removedMediaInput.value += mediaUrl;
+    }
+
+    function submitFormWithAjax() {
+        let formData = new FormData();
+        customFileList.forEach(file => {
+            formData.append('media', file);
+        });
+
+        // 获取并添加其他表单字段
+        let form = document.querySelector('form');
+        Array.from(form.elements).forEach(element => {
+            if (element.name && element.name !== 'media') {
+                formData.append(element.name, element.value);
+            }
+        });
+
+        // AJAX 请求
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action, true);
+        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                console.log('Upload complete:', xhr.responseText);
+                // 可以在这里添加上传成功后的处理逻辑
+            } else {
+                console.error('Upload failed:', xhr.responseText);
+                // 可以在这里添加上传失败后的处理逻辑
+            }
+        };
+
+        xhr.send(formData);
     }
 </script>
 

@@ -150,6 +150,10 @@ def edit_report(request):
             form = ReportForm(initial=initial_data)
 
             if request.method == 'POST':
+                print("Post data received in edit_report:", request.POST)
+                '''
+                Post data received in edit_report: <QueryDict: {'csrfmiddlewaretoken': ['fufa2tVxk0zKTe4zz0s1UPHyswgWXE9okQolK7tsDd4rOwEEmNGPL7uh4nBMmwU1'], 'license_plate': ['4905-U2'], 'date_month': ['11'], 'date_day': ['18'], 'date_year': ['2023'], 'violation': ['人行道停車'], 'status': ['其他'], 'location': ['24.1607424,120.6824391'], 'officer': [''], 'hour': ['13'], 'minute': ['51'], 'removed_media': ['/media/car.png;/media/f68ed47d-77f9-40e3-a4ab-c8735a328841.jpg']}>
+                '''
                 form = ReportForm(request.POST, request.FILES)
                 if form.is_valid():
                     data = form.cleaned_data
@@ -165,7 +169,16 @@ def edit_report(request):
                         saved_files.append(unique_filename)
 
                     removed_media = request.POST.get('removed_media', '').split(';')
+                    # 打印出 removed_media 看看是否獲取到了數據
+                    print("Removed media:", removed_media)
                     update_media_files(selected_record_id, saved_files, removed_media)
+
+                    # 新增：處理本地文件的刪除
+                    for media_url in removed_media:
+                        # if media_url:
+                        #     file_path = os.path.join(settings.MEDIA_ROOT, os.path.basename(media_url))
+                        if os.path.exists(media_url):
+                            os.remove(media_url)
 
                     messages.success(request, "记录和媒体文件已成功更新。")
                     return redirect('edit_report')
