@@ -110,51 +110,51 @@
     });
 
     function createPreview(file) {
-      let previewContainer = document.getElementById('file-preview-container');
-      let previewDiv = document.createElement('div');
-      previewDiv.classList.add('file-preview');
-      previewDiv.dataset.fileName = file.name;
+        let previewContainer = document.getElementById('file-preview-container');
+        let previewDiv = document.createElement('div');
+        previewDiv.classList.add('file-preview');
+        previewDiv.dataset.fileName = file.name;
 
-      // 创建用于显示文件的元素，根据文件类型判断是图片还是视频
-      let mediaElement;
-      if (file.type.startsWith('image/')) {
-        mediaElement = new Image();
-        mediaElement.height = 100;
-      } else if (file.type.startsWith('video/')) {
-        mediaElement = document.createElement('video');
-        mediaElement.height = 100;
-        mediaElement.controls = true;
-      }
+        // 创建用于显示文件的元素，根据文件类型判断是图片还是视频
+        let mediaElement;
+        if (file.type.startsWith('image/')) {
+            mediaElement = new Image();
+            mediaElement.height = 100;
+        } else if (file.type.startsWith('video/')) {
+            mediaElement = document.createElement('video');
+            mediaElement.height = 100;
+            mediaElement.controls = true;
+        }
 
-      let reader = new FileReader();
-      reader.onload = function(e) {
-        mediaElement.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            mediaElement.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
 
-      // 创建移除按钮
-      let removeButton = document.createElement('button');
-      removeButton.innerText = 'X';
-      removeButton.classList.add('remove-button');
-      removeButton.onclick = function() {
-        removeFile(file.name);
-        previewDiv.remove();
-      };
+        // 创建移除按钮
+        let removeButton = document.createElement('button');
+        removeButton.innerText = 'X';
+        removeButton.classList.add('remove-button');
+        removeButton.onclick = function() {
+            removeFile(file.name);
+            previewDiv.remove();
+        };
 
-      // 创建进度条
-      let progressBar = document.createElement('progress');
-      progressBar.value = 0;
-      progressBar.max = 100;
-      progressBar.classList.add('progress-bar');
-      progressBar.dataset.fileName = file.name; // 用于识别对应的进度条
+        // 创建进度条
+        let progressBar = document.createElement('progress');
+        progressBar.value = 0;
+        progressBar.max = 100;
+        progressBar.classList.add('progress-bar');
+        progressBar.dataset.fileName = file.name; // 用于识别对应的进度条
 
-      // 将元素添加到预览div中
-      previewDiv.appendChild(mediaElement);
-      previewDiv.appendChild(removeButton);
-      previewDiv.appendChild(progressBar); // 将进度条添加到预览div
+        // 将元素添加到预览div中
+        previewDiv.appendChild(mediaElement);
+        previewDiv.appendChild(removeButton);
+        previewDiv.appendChild(progressBar); // 将进度条添加到预览div
 
-      // 将预览div添加到容器中
-      previewContainer.appendChild(previewDiv);
+        // 将预览div添加到容器中
+        previewContainer.appendChild(previewDiv);
     }
 
     function removeFile(fileName) {
@@ -216,6 +216,8 @@
     }
 
     function removePreloadedMedia(mediaUrl) {
+        event.preventDefault(); // 阻止表单自动提交
+
         console.log("Removing media:", mediaUrl);
         // 从 URL 中提取文件名
         let filename = mediaUrl.split('/').pop();
