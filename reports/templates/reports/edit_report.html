@@ -39,7 +39,7 @@
                 
                 {{ form.media.label_tag }}: 
                 <!-- 上传新媒体文件的界面 -->
-                <input type="file" name="media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
+                <input type="file" name="new_media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
                 <!-- <input type="hidden" id="removed-media" name="removed_media"> -->
                 <button type="button" id="add-media-button">新增</button><br>
                                 
@@ -223,16 +223,21 @@
     function submitFormWithAjax() {
         let formData = new FormData();
         customFileList.forEach(file => {
-            formData.append('media', file);
+            formData.append('new_media', file); // 使用 'new_media' 作为字段名
         });
 
         // 获取并添加其他表单字段
         let form = document.querySelector('form');
         Array.from(form.elements).forEach(element => {
-            if (element.name && element.name !== 'media') {
+            if (element.name && !['new_media', 'media'].includes(element.name)) {
                 formData.append(element.name, element.value);
             }
         });
+
+        // 添加保留的媒体文件列表
+        let remainingMedia = Array.from(document.querySelectorAll('.file-preview[data-file-url]'))
+            .map(preview => preview.getAttribute('data-file-url'));
+        formData.append('media', remainingMedia.join(';')); // 使用 'media' 作为字段名
 
         // AJAX 请求
         let xhr = new XMLHttpRequest();
