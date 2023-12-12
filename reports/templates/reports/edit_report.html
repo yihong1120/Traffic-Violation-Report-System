@@ -39,7 +39,7 @@
                 
                 {{ form.media.label_tag }}: 
                 <!-- 上传新媒体文件的界面 -->
-                <input type="file" name="new_media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
+                <input type="file" name="media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
                 <!-- <input type="hidden" id="removed-media" name="removed_media"> -->
                 <button type="button" id="add-media-button">新增</button><br>
                                 
@@ -196,48 +196,46 @@
     }
 
     function removePreloadedMedia(mediaUrl) {
-      console.log("Removing media:", mediaUrl);
-      // 從界面中刪除預覽
-      let previewContainer = document.getElementById('file-preview-container');
-      let mediaDiv = previewContainer.querySelector(`[data-file-url="${mediaUrl}"]`);
-      if (mediaDiv) {
-          previewContainer.removeChild(mediaDiv);
-      }
+        console.log("Removing media:", mediaUrl);
+        // 从 URL 中提取文件名
+        let filename = mediaUrl.split('/').pop();
 
-      // 將刪除的媒體 URL 添加到隱藏的表單輸入框中
-      let removedMediaInput = document.getElementById('removed-media');
-      if (!removedMediaInput) {
-          removedMediaInput = document.createElement('input');
-          removedMediaInput.type = 'hidden';
-          removedMediaInput.id = 'removed-media';
-          removedMediaInput.name = 'removed_media';
-          document.forms[0].appendChild(removedMediaInput);
-      }
+        // 从界面中删除预览
+        let previewContainer = document.getElementById('file-preview-container');
+        let mediaDiv = previewContainer.querySelector(`[data-file-url="${mediaUrl}"]`);
+        if (mediaDiv) {
+            previewContainer.removeChild(mediaDiv);
+        }
 
-      if (removedMediaInput.value) {
-          removedMediaInput.value += ';';
-      }
-      removedMediaInput.value += mediaUrl;
+        // 将删除的媒体文件名添加到隐藏的表单输入框中
+        let removedMediaInput = document.getElementById('removed-media');
+        if (!removedMediaInput) {
+            removedMediaInput = document.createElement('input');
+            removedMediaInput.type = 'hidden';
+            removedMediaInput.id = 'removed-media';
+            removedMediaInput.name = 'removed_media';
+            document.forms[0].appendChild(removedMediaInput);
+        }
+
+        if (removedMediaInput.value) {
+            removedMediaInput.value += ';';
+        }
+        removedMediaInput.value += filename;
     }
 
     function submitFormWithAjax() {
         let formData = new FormData();
         customFileList.forEach(file => {
-            formData.append('new_media', file); // 使用 'new_media' 作为字段名
+            formData.append('media', file);
         });
 
         // 获取并添加其他表单字段
         let form = document.querySelector('form');
         Array.from(form.elements).forEach(element => {
-            if (element.name && !['new_media', 'media'].includes(element.name)) {
+            if (element.name && element.name !== 'media') {
                 formData.append(element.name, element.value);
             }
         });
-
-        // 添加保留的媒体文件列表
-        let remainingMedia = Array.from(document.querySelectorAll('.file-preview[data-file-url]'))
-            .map(preview => preview.getAttribute('data-file-url'));
-        formData.append('media', remainingMedia.join(';')); // 使用 'media' 作为字段名
 
         // AJAX 请求
         let xhr = new XMLHttpRequest();

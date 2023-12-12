@@ -175,10 +175,11 @@ def edit_report(request):
 
                     # 新增：處理本地文件的刪除
                     for media_url in removed_media:
-                        # if media_url:
-                        #     file_path = os.path.join(settings.MEDIA_ROOT, os.path.basename(media_url))
-                        if os.path.exists(media_url):
-                            os.remove(media_url)
+                        if media_url:
+                            file_path = os.path.join(settings.MEDIA_ROOT, os.path.basename(media_url))
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
+                                print(f"file_path: {file_path}")
 
                     messages.success(request, "记录和媒体文件已成功更新。")
                     return redirect('edit_report')
