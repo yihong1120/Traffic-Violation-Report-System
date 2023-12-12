@@ -90,6 +90,23 @@
             e.preventDefault();
             submitFormWithAjax();
         });
+
+        // 每次文件选择或移除后更新按钮状态
+        function updateButtonStates() {
+            let mediaCount = document.querySelectorAll('#file-preview-container .file-preview').length;
+            document.getElementById('add-media-button').disabled = mediaCount >= 5;
+            document.getElementById('submit-button').disabled = mediaCount < 1 || mediaCount > 5;
+
+            // 更新所有移除按钮的状态
+            document.querySelectorAll('.remove-button').forEach(button => {
+                button.disabled = mediaCount <= 1;
+            });
+        }
+
+        // 在文件选择后更新按钮状态
+        document.getElementById('media-input').addEventListener('change', function () {
+            updateButtonStates();
+        });
     });
 
     function createPreview(file) {
@@ -143,6 +160,9 @@
     function removeFile(fileName) {
       customFileList = customFileList.filter(file => file.name !== fileName);
       updateFormFiles();
+
+      // 更新按钮状态
+      updateButtonStates();
     }
 
     function updateFormFiles() {
@@ -221,6 +241,9 @@
             removedMediaInput.value += ';';
         }
         removedMediaInput.value += filename;
+
+        // 更新按钮状态
+        updateButtonStates();
     }
 
     function submitFormWithAjax() {
@@ -254,6 +277,9 @@
 
         xhr.send(formData);
     }
+
+    // 在页面加载时调用一次以初始化按钮状态
+    updateButtonStates(); 
 </script>
 
 <style>
