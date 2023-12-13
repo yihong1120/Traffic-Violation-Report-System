@@ -31,6 +31,8 @@ class TrafficViolation(models.Model):
     status = models.CharField(max_length=50, choices=STATUS)
     location = models.CharField(max_length=255)
     officer = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    # 定义一个 UUID 字段作为主键
+    traffic_violation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150, blank=True, null=True)
 
 @deconstructible
