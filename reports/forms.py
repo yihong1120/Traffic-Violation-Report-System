@@ -52,7 +52,9 @@ class ReportForm(forms.Form):
     status = forms.ChoiceField(label="檢舉結果", choices=STATUS, initial='其他')
     location = forms.CharField(label="地點", max_length=100)
     officer = forms.CharField(label="承辦人", max_length=100, required=False)
-    media = MultiFileField(label="媒體", min_num=1, max_num=5, max_file_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
+    # traffic violatio id
+    # user name
+    media = MultiFileField(label="媒體", min_num=1, max_num=5, max_file_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE, required=False)
 
     def clean(self):
         cleaned_data = super().clean()

@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+from django.shortcuts import get_object_or_404
 import uuid
 import os
 from datetime import datetime
@@ -18,10 +19,10 @@ from .models import UserProfile
 from .models import TrafficViolation, MediaFile
 from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
 from google.cloud import bigquery
-from .bigquery_utils import (
+from .mysql_utils import (
     get_traffic_violation_markers,
     get_traffic_violation_details,
-    save_to_bigquery,
+    save_to_mysql,
     search_traffic_violations,
     get_user_records,
     get_media_records,
@@ -29,22 +30,22 @@ from .bigquery_utils import (
     update_media_files,
 )
 
+# 修改後的 search_traffic_violations_view
 def search_traffic_violations_view(request):
-    client = bigquery.Client()
-
     keyword = request.GET.get('keyword', '')
     time_range = request.GET.get('timeRange', 'all')
     from_date = request.GET.get('fromDate', '')
     to_date = request.GET.get('toDate', '')
 
-    data = search_traffic_violations(client, keyword, time_range, from_date, to_date)
-
+    data = search_traffic_violations(keyword, time_range, from_date, to_date)
     return JsonResponse(data, safe=False)
 
+# 修改後的 traffic_violation_markers_view
 def traffic_violation_markers_view(request):
     data = get_traffic_violation_markers()
     return JsonResponse(data, safe=False)
 
+# 修改後的 traffic_violation_details_view
 def traffic_violation_details_view(request, traffic_violation_id):
     data = get_traffic_violation_details(traffic_violation_id)
     return JsonResponse(data)
@@ -126,51 +127,70 @@ def edit_report(request):
     selected_record_id = request.GET.get('record_id')
     selected_record = None
     form = None
-    media_urls = []  # 初始化 media_urls 为空列表
+    media_urls = []
 
     if selected_record_id:
-        selected_record = next((record for record in user_records if str(record['traffic_violation_id']) == selected_record_id), None)
+        selected_record = get_object_or_404(TrafficViolation, traffic_violation_id=selected_record_id, username=username)
+        selected_record_media = MediaFile.objects.filter(traffic_violation=selected_record)
+        media_urls = [media.file.url for media in selected_record_media]
 
-        if selected_record:
-            selected_record['media'] = get_media_records(selected_record_id)
-            hour = selected_record['time'].hour
-            minute = selected_record['time'].minute
+        initial_data = {
+            'license_plate': selected_record.license_plate,
+            'date': selected_record.date,
+            'hour': selected_record.time.hour,
+            'minute': selected_record.time.minute,
+            'violation': selected_record.violation,
+            'status': selected_record.status,
+            'location': selected_record.location,
+            'officer': selected_record.officer.username if selected_record.officer else ""
+        }
+        form = ReportForm(initial=initial_data)
 
-            initial_data = {
-                'license_plate': selected_record['license_plate'],
-                'date': selected_record['date'],
-                'hour': hour,
-                'minute': minute,
-                'violation': selected_record['violation'],
-                'status': selected_record['status'],
-                'location': selected_record['location'],
-                'officer': selected_record['officer'] if selected_record['officer'] else "",
-            }
+        if request.method == 'POST':
+            form = ReportForm(request.POST, request.FILES)
+            if form.is_valid():
+                selected_record.license_plate = form.cleaned_data['license_plate']
+                selected_record.date = form.cleaned_data['date']
+                selected_record.time = form.cleaned_data['time']
+                selected_record.violation = form.cleaned_data['violation']
+                selected_record.status = form.cleaned_data['status']
+                selected_record.location = form.cleaned_data['location']
+                # 更新 selected_record 的其他字段
+                selected_record.save()
 
-            form = ReportForm(initial=initial_data)
+                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                saved_files = []
 
-            if request.method == 'POST':
-                form = ReportForm(request.POST, request.FILES)
-                if form.is_valid():
-                    data = form.cleaned_data
-                    update_traffic_violation(data, selected_record_id)
-                    
-                    fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-                    saved_files = []
+                for media_file in request.FILES.getlist('media'):
+                    _, file_extension = os.path.splitext(media_file.name)
+                    unique_filename = str(uuid.uuid4()) + file_extension
+                    fs.save(unique_filename, media_file)
+                    saved_files.append(unique_filename)
 
-                    for media_file in request.FILES.getlist('media'):
-                        _, file_extension = os.path.splitext(media_file.name)
-                        unique_filename = str(uuid.uuid4()) + file_extension
-                        fs.save(unique_filename, media_file)
-                        saved_files.append(unique_filename)
+                removed_media = request.POST.get('removed_media', '').split(';')
 
-                    removed_media = request.POST.get('removed_media', '').split(';')
-                    update_media_files(selected_record_id, saved_files, removed_media)
+                # 检查并删除 removed_media 列表中的媒体文件
+                for file_name in removed_media:
+                    # 确保 file_name 不是空字符串
+                    if file_name:
+                        # 构建完整的文件路径
+                        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+                        
+                        # 检查文件是否存在，且不是目录
+                        if os.path.exists(file_path) and os.path.isfile(file_path):
+                            try:
+                                os.remove(file_path)
+                            except PermissionError as e:
+                                # 如果有权限错误，可以在此处记录错误
+                                print(f"Error removing file {file_path}: {e}")
+                        else:
+                            # 如果文件不存在或路径是一个目录，可以在此处记录
+                            print(f"File not found or is a directory: {file_path}")
 
-                    messages.success(request, "记录和媒体文件已成功更新。")
-                    return redirect('edit_report')
+                update_media_files(selected_record_id, saved_files, removed_media)
 
-            media_urls = [os.path.join(settings.MEDIA_URL, media['file']) for media in selected_record['media']]
+                messages.success(request, "记录和媒体文件已成功更新。")
+                return redirect('edit_report')
 
     context = {
         'user_records': user_records,
@@ -187,52 +207,38 @@ def account_view(request):
 @login_required
 def dashboard(request):
     if request.method == 'POST':
-        # 检测 AJAX 请求
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # AJAX 文件上传处理
-            file = request.FILES['file']
-            # 创建和保存 MediaFile 实例
-            media_instance = MediaFile(file=file)
-            media_instance.save()
-            # 返回成功响应
-            return JsonResponse({'status': 'success', 'file_id': media_instance.id})
-        else:
-            form = ReportForm(request.POST, request.FILES)
-            if form.is_valid():
-                print(f"username: {request.user.username}")
-                # 创建一个新的 TrafficViolation 实例
-                traffic_violation = TrafficViolation(
-                    license_plate=form.cleaned_data['license_plate'],
-                    date=form.cleaned_data['date'],
-                    time=form.cleaned_data['time'],  # 使用表单中清洗过的 time 字段
-                    violation=form.cleaned_data['violation'],
-                    status=form.cleaned_data['status'],
-                    location=process_input(form.cleaned_data['location']),
-                    officer=form.cleaned_data['officer'] if form.cleaned_data['officer'] else None,
-                    username=request.user.username  # 添加当前登录用户的用户名
-                    # media 字段将在模型的 save 方法中处理
+        form = ReportForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Create a new TrafficViolation instance using the validated form data
+            traffic_violation = TrafficViolation(
+                license_plate=form.cleaned_data['license_plate'],
+                date=form.cleaned_data['date'],
+                time=form.cleaned_data['time'],
+                violation=form.cleaned_data['violation'],
+                status=form.cleaned_data['status'],
+                location=process_input(form.cleaned_data['location']),
+                officer=request.user if form.cleaned_data['officer'] else None,
+                # traffic_violation_id
+                username=request.user.username
+            )
+            traffic_violation.save()
+
+            # Handle file uploads
+            for file in request.FILES.getlist('media'):
+                # Save file to FileSystemStorage
+                fs = FileSystemStorage()
+                filename = fs.save(file.name, file)
+                file_url = fs.url(filename)
+
+                # Create and save MediaFile instance
+                MediaFile.objects.create(
+                    traffic_violation=traffic_violation,
+                    file=filename
                 )
-                # 保存 TrafficViolation 实例
-                traffic_violation.save()
 
-                # Now handle file uploads
-                media_instances = []
-                for file in request.FILES.getlist('media'):
-                    # Create a new instance of a model that handles the media files
-                    # This model should have a ForeignKey to `TrafficViolation` and a FileField
-                    media_instance = MediaFile(
-                        traffic_violation=traffic_violation,
-                        file=file
-                    )
-                    media_instance.save()
-                    media_instances.append(media_instance)
-
-                # Insert the data from form into BigQuery
-                save_to_bigquery(traffic_violation, media_instances)
-
-                messages.success(request, '报告提交成功。')
-                return redirect('dashboard')  # 重定向到dashboard页面或其他页面
+            messages.success(request, '报告提交成功。')
+            return redirect('dashboard')
     else:
-        form = ReportForm()  # 如果不是POST请求，则创建一个空表单
+        form = ReportForm()
 
     return render(request, 'reports/dashboard.html', {'form': form})

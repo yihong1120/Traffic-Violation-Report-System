@@ -40,12 +40,13 @@
                 {{ form.media.label_tag }}: 
                 <!-- 上传新媒体文件的界面 -->
                 <input type="file" name="media" multiple id="media-input" accept="image/*,video/*" style="display: none;">
+                <!-- <input type="hidden" id="removed-media" name="removed_media"> -->
                 <button type="button" id="add-media-button">新增</button><br>
                                 
                 <!-- File Preview Container -->
                 <div id="file-preview-container">
                   {% for media_url in media_urls %}
-                  <div class="file-preview">
+                  <div class="file-preview" data-file-url="{{ media_url }}">
                       <!-- 检查文件扩展名并显示适当的预览 -->
                       {% if '.jpg' in media_url or '.jpeg' in media_url or '.png' in media_url or '.gif' in media_url or '.JPG' in media_url or '.JEPG' in media_url %}
                       <img src="{{ media_url }}" height="100">
@@ -59,7 +60,8 @@
                   </div>
                   {% endfor %}
                 </div>
-                <button type="submit">保存修改</button>
+                <button type="submit" id="submit-button">保存修改</button>
+                <input type="hidden" id="removed-media" name="removed_media">
             </form>
             {% else %}
             <p>请选择一个记录进行编辑。</p>
@@ -69,70 +71,98 @@
 </div>
 
 <script>
-    var customFileList = []; // Custom file list
-    document.getElementById('add-media-button').addEventListener('click', function() {
-      document.getElementById('media-input').click();
-    });
+    // 定义全局变量用于存储上传的文件
+    var customFileList = [];
 
-    document.getElementById('media-input').addEventListener('change', function(e) {
-      Array.from(e.target.files).forEach(file => {
-        customFileList.push(file);
-        createPreview(file);
-      });
-      updateFormFiles();
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('add-media-button').addEventListener('click', function () {
+            document.getElementById('media-input').click();
+        });
+
+        document.getElementById('media-input').addEventListener('change', function (e) {
+            Array.from(e.target.files).forEach(file => {
+                customFileList.push(file);
+                createPreview(file);
+            });
+        });
+
+        document.getElementById('submit-button').addEventListener('click', function (e) {
+            e.preventDefault();
+            submitFormWithAjax();
+        });
+
+        // 每次文件选择或移除后更新按钮状态
+        function updateButtonStates() {
+            let mediaCount = document.querySelectorAll('#file-preview-container .file-preview').length;
+            document.getElementById('add-media-button').disabled = mediaCount >= 5;
+            document.getElementById('submit-button').disabled = mediaCount < 1 || mediaCount > 5;
+
+            // 更新所有移除按钮的状态
+            document.querySelectorAll('.remove-button').forEach(button => {
+                button.disabled = mediaCount <= 1;
+            });
+        }
+
+        // 在文件选择后更新按钮状态
+        document.getElementById('media-input').addEventListener('change', function () {
+            updateButtonStates();
+        });
     });
 
     function createPreview(file) {
-      let previewContainer = document.getElementById('file-preview-container');
-      let previewDiv = document.createElement('div');
-      previewDiv.classList.add('file-preview');
-      previewDiv.dataset.fileName = file.name;
+        let previewContainer = document.getElementById('file-preview-container');
+        let previewDiv = document.createElement('div');
+        previewDiv.classList.add('file-preview');
+        previewDiv.dataset.fileName = file.name;
 
-      // 创建用于显示文件的元素，根据文件类型判断是图片还是视频
-      let mediaElement;
-      if (file.type.startsWith('image/')) {
-        mediaElement = new Image();
-        mediaElement.height = 100;
-      } else if (file.type.startsWith('video/')) {
-        mediaElement = document.createElement('video');
-        mediaElement.height = 100;
-        mediaElement.controls = true;
-      }
+        // 创建用于显示文件的元素，根据文件类型判断是图片还是视频
+        let mediaElement;
+        if (file.type.startsWith('image/')) {
+            mediaElement = new Image();
+            mediaElement.height = 100;
+        } else if (file.type.startsWith('video/')) {
+            mediaElement = document.createElement('video');
+            mediaElement.height = 100;
+            mediaElement.controls = true;
+        }
 
-      let reader = new FileReader();
-      reader.onload = function(e) {
-        mediaElement.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            mediaElement.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
 
-      // 创建移除按钮
-      let removeButton = document.createElement('button');
-      removeButton.innerText = 'X';
-      removeButton.classList.add('remove-button');
-      removeButton.onclick = function() {
-        removeFile(file.name);
-        previewDiv.remove();
-      };
+        // 创建移除按钮
+        let removeButton = document.createElement('button');
+        removeButton.innerText = 'X';
+        removeButton.classList.add('remove-button');
+        removeButton.onclick = function() {
+            removeFile(file.name);
+            previewDiv.remove();
+        };
 
-      // 创建进度条
-      let progressBar = document.createElement('progress');
-      progressBar.value = 0;
-      progressBar.max = 100;
-      progressBar.classList.add('progress-bar');
-      progressBar.dataset.fileName = file.name; // 用于识别对应的进度条
+        // 创建进度条
+        let progressBar = document.createElement('progress');
+        progressBar.value = 0;
+        progressBar.max = 100;
+        progressBar.classList.add('progress-bar');
+        progressBar.dataset.fileName = file.name; // 用于识别对应的进度条
 
-      // 将元素添加到预览div中
-      previewDiv.appendChild(mediaElement);
-      previewDiv.appendChild(removeButton);
-      previewDiv.appendChild(progressBar); // 将进度条添加到预览div
+        // 将元素添加到预览div中
+        previewDiv.appendChild(mediaElement);
+        previewDiv.appendChild(removeButton);
+        previewDiv.appendChild(progressBar); // 将进度条添加到预览div
 
-      // 将预览div添加到容器中
-      previewContainer.appendChild(previewDiv);
+        // 将预览div添加到容器中
+        previewContainer.appendChild(previewDiv);
     }
 
     function removeFile(fileName) {
       customFileList = customFileList.filter(file => file.name !== fileName);
       updateFormFiles();
+
+      // 更新按钮状态
+      updateButtonStates();
     }
 
     function updateFormFiles() {
@@ -186,24 +216,72 @@
     }
 
     function removePreloadedMedia(mediaUrl) {
-      // 從界面中刪除
-      let previewContainer = document.getElementById('file-preview-container');
-      let mediaDiv = previewContainer.querySelector(`[data-file-url="${mediaUrl}"]`);
-      if (mediaDiv) {
-        previewContainer.removeChild(mediaDiv);
-      }
+        event.preventDefault(); // 阻止表单自动提交
 
-      // 將刪除的媒體URL添加到一個隱藏的輸入框中，以便在提交表單時處理
-      let removedMediaInput = document.getElementById('removed-media');
-      if (!removedMediaInput) {
-        removedMediaInput = document.createElement('input');
-        removedMediaInput.type = 'hidden';
-        removedMediaInput.id = 'removed-media';
-        removedMediaInput.name = 'removed_media';
-        document.forms[0].appendChild(removedMediaInput);
-      }
-      removedMediaInput.value += mediaUrl + ';';
+        console.log("Removing media:", mediaUrl);
+        // 从 URL 中提取文件名
+        let filename = mediaUrl.split('/').pop();
+
+        // 从界面中删除预览
+        let previewContainer = document.getElementById('file-preview-container');
+        let mediaDiv = previewContainer.querySelector(`[data-file-url="${mediaUrl}"]`);
+        if (mediaDiv) {
+            previewContainer.removeChild(mediaDiv);
+        }
+
+        // 将删除的媒体文件名添加到隐藏的表单输入框中
+        let removedMediaInput = document.getElementById('removed-media');
+        if (!removedMediaInput) {
+            removedMediaInput = document.createElement('input');
+            removedMediaInput.type = 'hidden';
+            removedMediaInput.id = 'removed-media';
+            removedMediaInput.name = 'removed_media';
+            document.forms[0].appendChild(removedMediaInput);
+        }
+
+        if (removedMediaInput.value) {
+            removedMediaInput.value += ';';
+        }
+        removedMediaInput.value += filename;
+
+        // 更新按钮状态
+        updateButtonStates();
     }
+
+    function submitFormWithAjax() {
+        let formData = new FormData();
+        customFileList.forEach(file => {
+            formData.append('media', file);
+        });
+
+        // 获取并添加其他表单字段
+        let form = document.querySelector('form');
+        Array.from(form.elements).forEach(element => {
+            if (element.name && element.name !== 'media') {
+                formData.append(element.name, element.value);
+            }
+        });
+
+        // AJAX 请求
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action, true);
+        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                console.log('Upload complete:', xhr.responseText);
+                // 可以在这里添加上传成功后的处理逻辑
+            } else {
+                console.error('Upload failed:', xhr.responseText);
+                // 可以在这里添加上传失败后的处理逻辑
+            }
+        };
+
+        xhr.send(formData);
+    }
+
+    // 在页面加载时调用一次以初始化按钮状态
+    updateButtonStates(); 
 </script>
 
 <style>
