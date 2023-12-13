@@ -125,13 +125,12 @@ def edit_report(request):
     user_records = get_user_records(username)
 
     selected_record_id = request.GET.get('record_id')
-    print(f"selected_record_id: {selected_record_id}")
     selected_record = None
     form = None
     media_urls = []
 
     if selected_record_id:
-        selected_record = get_object_or_404(TrafficViolation, id=selected_record_id, username=username)
+        selected_record = get_object_or_404(TrafficViolation, traffic_violation_id=selected_record_id, username=username)
         selected_record_media = MediaFile.objects.filter(traffic_violation=selected_record)
         media_urls = [media.file.url for media in selected_record_media]
 
@@ -148,9 +147,16 @@ def edit_report(request):
         form = ReportForm(initial=initial_data)
 
         if request.method == 'POST':
-            form = ReportForm(request.POST, request.FILES, instance=selected_record)
+            form = ReportForm(request.POST, request.FILES)
             if form.is_valid():
-                form.save()
+                selected_record.license_plate = form.cleaned_data['license_plate']
+                selected_record.date = form.cleaned_data['date']
+                selected_record.time = form.cleaned_data['time']
+                selected_record.violation = form.cleaned_data['violation']
+                selected_record.status = form.cleaned_data['status']
+                selected_record.location = form.cleaned_data['location']
+                # 更新 selected_record 的其他字段
+                selected_record.save()
 
                 fs = FileSystemStorage(location=settings.MEDIA_ROOT)
                 saved_files = []
@@ -162,6 +168,25 @@ def edit_report(request):
                     saved_files.append(unique_filename)
 
                 removed_media = request.POST.get('removed_media', '').split(';')
+
+                # 检查并删除 removed_media 列表中的媒体文件
+                for file_name in removed_media:
+                    # 确保 file_name 不是空字符串
+                    if file_name:
+                        # 构建完整的文件路径
+                        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+                        
+                        # 检查文件是否存在，且不是目录
+                        if os.path.exists(file_path) and os.path.isfile(file_path):
+                            try:
+                                os.remove(file_path)
+                            except PermissionError as e:
+                                # 如果有权限错误，可以在此处记录错误
+                                print(f"Error removing file {file_path}: {e}")
+                        else:
+                            # 如果文件不存在或路径是一个目录，可以在此处记录
+                            print(f"File not found or is a directory: {file_path}")
+
                 update_media_files(selected_record_id, saved_files, removed_media)
 
                 messages.success(request, "记录和媒体文件已成功更新。")
@@ -174,6 +199,7 @@ def edit_report(request):
         'media_urls': media_urls,
     }
     return render(request, 'reports/edit_report.html', context)
+
 @login_required
 def account_view(request):
     return render(request, 'reports/account.html', {'user': request.user})
@@ -207,7 +233,7 @@ def dashboard(request):
                 # Create and save MediaFile instance
                 MediaFile.objects.create(
                     traffic_violation=traffic_violation,
-                    file=file_url
+                    file=filename
                 )
 
             messages.success(request, '报告提交成功。')

@@ -1,6 +1,7 @@
 from typing import List, Dict
 from django.http import JsonResponse, HttpRequest
 from .models import TrafficViolation, MediaFile
+from django.conf import settings
 from django.db.models import Q
 import datetime
 
@@ -11,7 +12,7 @@ def get_user_records(username: str) -> List[Dict]:
     records = TrafficViolation.objects.filter(username=username).values()
     return list(records)
 
-def get_media_records(record_id: int) -> List[Dict]:
+def get_media_records(record_id: str) -> List[Dict]:
     """
     Retrieve media records for a specific traffic violation record from MySQL database.
     """
@@ -22,7 +23,7 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
     """
     Update a specific traffic violation record in MySQL database.
     """
-    TrafficViolation.objects.filter(id=selected_record_id).update(**data)
+    TrafficViolation.objects.filter(selected_record_id=selected_record_id).update(**data)
 
 def update_media_files(selected_record_id: str, new_media_files: List[str], removed_media: List[str]):
     """
@@ -64,32 +65,45 @@ def get_traffic_violation_markers(request: HttpRequest) -> JsonResponse:
     '''
     This function retrieves markers for traffic violations to be displayed on a map.
     '''
-    violations = TrafficViolation.objects.values('id', 'location')
+    violations = TrafficViolation.objects.values('traffic_violation_id', 'location')
     markers = [
-        {'id': v['id'], 'location': v['location']}
+        {
+            'traffic_violation_id': str(v['traffic_violation_id']),  # 转换 UUID 为字符串
+            'lat': float(v['location'].split(',')[0]),  # 提取并转换纬度为浮点数
+            'lng': float(v['location'].split(',')[1])   # 提取并转换经度为浮点数
+        }
         for v in violations
     ]
     return JsonResponse(markers, safe=False)
 
 
-def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: int) -> JsonResponse:
+def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: str) -> JsonResponse:
     '''
     This function provides detailed information about a specific traffic violation.
     '''
     try:
-        violation = TrafficViolation.objects.get(id=traffic_violation_id)
+        violation = TrafficViolation.objects.get(traffic_violation_id=traffic_violation_id)
         media_files = MediaFile.objects.filter(traffic_violation=violation).values_list('file', flat=True)
-        
+
+        lat, lng = map(float, violation.location.split(','))
+        title = f'{violation.license_plate} - {violation.violation}'
+
+        # 构建含有完整路径的媒体文件列表
+        full_media_files = [settings.MEDIA_URL + file_name for file_name in media_files]
+
         data = {
+            'lat': lat,
+            'lng': lng,
+            'title': title,
+            'media': full_media_files,  # 使用完整路径的媒体文件列表
             'license_plate': violation.license_plate,
             'date': violation.date,
-            'time': violation.time,
+            'time': violation.time.strftime('%H:%M'),
             'violation': violation.violation,
             'status': violation.status,
-            'location': violation.location,
-            'officer': violation.officer.username if violation.officer else None,
-            'media_files': list(media_files)
+            'officer': violation.officer.username if violation.officer else '无'
         }
+
         return JsonResponse(data)
     except TrafficViolation.DoesNotExist:
         return JsonResponse({'error': 'Traffic violation not found'}, status=404)

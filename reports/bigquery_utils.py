@@ -324,7 +324,7 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: in
         'lat': lat,
         'lng': lng,
         'title': f'{row.license_plate} - {row.violation}',
-        'media': media_files,  # 返回所有媒体文件
+        'media': media_files,
         'license_plate': row.license_plate,
         'date': row.date,
         'time': row.time,

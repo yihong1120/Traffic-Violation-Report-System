@@ -31,9 +31,7 @@ class TrafficViolation(models.Model):
     status = models.CharField(max_length=50, choices=STATUS)
     location = models.CharField(max_length=255)
     officer = models.CharField(max_length=255, blank=True, null=True)
-    # 定义一个 UUID 字段作为主键
     traffic_violation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # traffic_violation_id = models.AutoField()
     username = models.CharField(max_length=150, blank=True, null=True)
 
 @deconstructible
@@ -50,7 +48,7 @@ class PathAndRename(object):
 
 # 在模型中使用 PathAndRename 來處理 'upload_to'
 class MediaFile(models.Model):
-    traffic_violation = models.ForeignKey(TrafficViolation, on_delete=models.CASCADE)
+    traffic_violation = models.ForeignKey(TrafficViolation, on_delete=models.CASCADE, null=True)
     file = models.FileField(upload_to = PathAndRename(''))
 
 class UserProfile(models.Model):
