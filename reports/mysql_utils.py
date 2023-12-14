@@ -89,7 +89,7 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: st
         title = f'{violation.license_plate} - {violation.violation}'
 
         # 构建含有完整路径的媒体文件列表
-        full_media_files = [settings.MEDIA_URL + file_name for file_name in media_files]
+        full_media_files = [file_name for file_name in media_files]
 
         data = {
             'lat': lat,
