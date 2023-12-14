@@ -1,15 +1,12 @@
 {% extends "base.html" %}
-{% load static %}
-
-<link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
 
 {% block content %}
   <h2>登入</h2>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" class="button">Login</button>
-    <a href="{% url 'register' %}" class="button">Register</a>    
+    <button type="submit">Login</button>
+    <a href="{% url 'register' %}">Register</a>    
   </form>
 {% endblock %}
 

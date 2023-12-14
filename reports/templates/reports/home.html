@@ -5,7 +5,10 @@
 
 {% if request.user.is_authenticated %}
     <p>您好，{{ request.user.username }}！</p>
-    <a href="{% url 'logout' %}">登出</a>
+    <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">登出</button>
+    </form>
 {% else %}
     <p>请<a href="{% url 'login' %}">登录</a>继续。</p>
 {% endif %}
