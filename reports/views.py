@@ -124,6 +124,8 @@ def edit_report(request):
     username = request.user.username
     user_records = get_user_records(username)
 
+    selected_record, form, media_urls = get_selected_record_and_form(request, username)
+def get_selected_record_and_form(request, username):
     selected_record_id = request.GET.get('record_id')
     selected_record = None
     form = None
@@ -135,6 +137,19 @@ def edit_report(request):
         media_urls = [media.file.url for media in selected_record_media]
 
         initial_data = {
+            'license_plate': selected_record.license_plate,
+            'date': selected_record.date,
+            'hour': selected_record.time.hour,
+            'minute': selected_record.time.minute,
+            'violation': selected_record.violation,
+            'status': selected_record.status,
+            'location': selected_record.location,
+            'officer': selected_record.officer.username if selected_record.officer else ""
+        }
+        form = ReportForm(initial=initial_data)
+
+    return selected_record, form, media_urls
+            selected_record, form = handle_form_submission(request, form, selected_record)
             'license_plate': selected_record.license_plate,
             'date': selected_record.date,
             'hour': selected_record.time.hour,
