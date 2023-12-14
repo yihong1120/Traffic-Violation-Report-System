@@ -41,6 +41,9 @@ if not GOOGLE_MAPS_API_KEY:
 DEBUG = True
 ALLOWED_HOSTS = []
 
+SESSION_COOKIE_AGE = 10800  # 3 hours in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
