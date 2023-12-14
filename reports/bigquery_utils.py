@@ -18,29 +18,35 @@ def get_user_records(username: str) -> List[Dict]:
         List[Dict]: A list of dictionaries, each representing a traffic violation record.
     """
     client = bigquery.Client()
-    query = (
-        f"SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation` "
-        f"WHERE username = '{username}'"
+    query = """
+        SELECT * 
+        FROM `pivotal-equinox-404812.traffic_violation_db.reports_trafficviolation` 
+        WHERE username = @username
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("username", "STRING", username)
+        ]
     )
-    query_job = client.query(query)
+    query_job = client.query(query, job_config=job_config)
     return [dict(row) for row in query_job.result()]
 
-def get_media_records() -> List[Dict]:
+def get_media_records(record_id: int) -> List[Dict]:
     """
-    Retrieve all media records from BigQuery.
-
-    This function fetches media file information related to traffic violations
-    from the BigQuery table. It's limited to a maximum of 1000 records for performance.
-
-    Returns:
-        List[Dict]: A list of dictionaries, each representing a media file record.
+    Retrieve media records for a specific traffic violation record from BigQuery.
     """
     client = bigquery.Client()
-    media_query = (
-        "SELECT * FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` "
-        "LIMIT 1000"
+    media_query = """
+        SELECT * 
+        FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` 
+        WHERE traffic_violation_id = @record_id
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("record_id", "INT64", record_id)
+        ]
     )
-    media_query_job = client.query(media_query)
+    media_query_job = client.query(media_query, job_config=job_config)
     return [dict(row) for row in media_query_job.result()]
 
 def update_traffic_violation(data: Dict, selected_record_id: str):
@@ -55,6 +61,9 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
         selected_record_id (str): The ID of the traffic violation record to update.
     """
     client = bigquery.Client()
+
+    #Convert string to integer
+    selected_record_id_int = int(selected_record_id)
 
     # Construct the update statement and parameters
     update_query = """
@@ -77,7 +86,7 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
         bigquery.ScalarQueryParameter("status", "STRING", data['status']),
         bigquery.ScalarQueryParameter("location", "STRING", data['location']),
         bigquery.ScalarQueryParameter("officer", "STRING", data['officer']),
-        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+        bigquery.ScalarQueryParameter("traffic_violation_id", "INT64", selected_record_id_int),
     ]
 
     job_config = bigquery.QueryJobConfig(query_parameters=params)
@@ -85,41 +94,51 @@ def update_traffic_violation(data: Dict, selected_record_id: str):
     # Execute the update
     client.query(update_query, job_config=job_config).result()
 
-def update_media_files(selected_record_id: str, media_files: List[InMemoryUploadedFile]):
+def update_media_files(selected_record_id: str, new_media_files: List[InMemoryUploadedFile], removed_media: List[str]):
     """
-    Update media files associated with a specific traffic violation record in BigQuery.
+    Updates media files associated with a specific traffic violation record in BigQuery.
 
-    This function first deletes any existing media files associated with the traffic violation
-    record and then inserts the new media file information.
+    This function first deletes any existing media files linked to the traffic violation record 
+    and then inserts the information for the new media files.
 
     Args:
         selected_record_id (str): The ID of the traffic violation record.
-        media_files (List[InMemoryUploadedFile]): A list of media files to be associated with the record.
+        new_media_files (List[InMemoryUploadedFile]): A list of new media files to be associated with the record.
+        removed_media (List[str]): A list of URLs of media files to be removed.
     """
     client = bigquery.Client()
 
-    # Delete existing media files
-    delete_query = """
-        DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
-        WHERE traffic_violation_id = @traffic_violation_id
-    """
-    delete_params = [
-        bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
-    ]
-    delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
-    client.query(delete_query, delete_job_config).result()
+    # Converting the selected record ID to an integer for BigQuery compatibility
+    selected_record_id_int = int(selected_record_id)
 
-    # Insert new media files
-    for media_file in media_files:
+    # Processing the deletion of existing media files
+    for media_url in removed_media:
+        if media_url:
+            # Constructing the delete query for BigQuery
+            delete_query = """
+                DELETE FROM `pivotal-equinox-404812.traffic_violation_db.reports_mediafile`
+                WHERE file = @file
+            """
+            delete_params = [
+                bigquery.ScalarQueryParameter("file", "STRING", media_url),
+            ]
+            delete_job_config = bigquery.QueryJobConfig(query_parameters=delete_params)
+            # Executing the delete query
+            client.query(delete_query, delete_job_config).result()
+
+    # Processing the addition of new media files
+    for filename in new_media_files:
+        # Constructing the insert query for BigQuery
         insert_query = """
             INSERT INTO `pivotal-equinox-404812.traffic_violation_db.reports_mediafile` (file, traffic_violation_id)
             VALUES (@file, @traffic_violation_id)
         """
         insert_params = [
-            bigquery.ScalarQueryParameter("file", "STRING", media_file.name),
-            bigquery.ScalarQueryParameter("traffic_violation_id", "STRING", selected_record_id),
+            bigquery.ScalarQueryParameter("file", "STRING", filename),
+            bigquery.ScalarQueryParameter("traffic_violation_id", "INT64", selected_record_id_int),
         ]
         insert_job_config = bigquery.QueryJobConfig(query_parameters=insert_params)
+        # Executing the insert query
         client.query(insert_query, insert_job_config).result()
 
 def search_traffic_violations(request: HttpRequest) -> JsonResponse:
@@ -142,63 +161,66 @@ def search_traffic_violations(request: HttpRequest) -> JsonResponse:
     client = bigquery.Client()
 
     # Fetch GET parameters from the request
-    keyword: str = request.GET.get('keyword', '')
-    time_range: str = request.GET.get('timeRange', 'all')
-    from_date: str = request.GET.get('fromDate', '')
-    to_date: str = request.GET.get('toDate', '')
+    keyword: str = request.GET.get('keyword', '')  # Get the 'keyword' parameter from the request
+    time_range: str = request.GET.get('timeRange', 'all')  # Get the 'timeRange' parameter with a default value of 'all'
+    from_date: str = request.GET.get('fromDate', '')  # Get the 'fromDate' parameter from the request
+    to_date: str = request.GET.get('toDate', '')  # Get the 'toDate' parameter from the request
 
-    # Build WHERE clauses based on the provided time range
-    where_clauses: List[str] = []
+    # Define the base SQL query
+    query = """
+        SELECT license_plate, date, time, violation, status, location, traffic_violation_id
+        FROM `traffic_violation_db.reports_trafficviolation`
+        WHERE TRUE
+    """
+
+    # Initialise a list to hold query parameters
+    params = []
+
+    # Check if a specific time range is selected
     if time_range != 'all':
-        # Process the time range
-        if time_range == 'custom':
-            where_clauses.append(f"DATE(date) BETWEEN '{from_date}' AND '{to_date}'")
+        current_date: datetime.date = datetime.datetime.now().date()
+        date_from = None
+        
+        # Calculate the date range based on the selected time range
+        if time_range == '1day':
+            date_from = current_date - datetime.timedelta(days=1)
+        elif time_range == '1week':
+            date_from = current_date - datetime.timedelta(weeks=1)
+        elif time_range == '1month':
+            date_from = current_date - datetime.timedelta(days=30)
+        elif time_range == '6months':
+            date_from = current_date - datetime.timedelta(days=30*6)
+        elif time_range == '1year':
+            date_from = current_date - datetime.timedelta(days=365)
+        elif time_range == 'custom':
+            date_from = from_date
+            to_date = to_date
+
+        # Add date filters to the query
+        if time_range != 'custom':
+            query += " AND DATE(date) >= @date_from"
+            params.append(bigquery.ScalarQueryParameter('date_from', 'DATE', date_from))
         else:
-            # Get the current date
-            current_date: datetime.date = datetime.datetime.now().date()
+            query += " AND DATE(date) BETWEEN @from_date AND @to_date"
+            params.append(bigquery.ScalarQueryParameter('from_date', 'DATE', from_date))
+            params.append(bigquery.ScalarQueryParameter('to_date', 'DATE', to_date))
 
-            # Calculate the date range
-            if time_range == '1day':
-                date_from = current_date - datetime.timedelta(days=1)
-                where_clauses.append(f"DATE(date) = '{date_from}'")
-            elif time_range == '1week':
-                date_from = current_date - datetime.timedelta(weeks=1)
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == '1month':
-                date_from = current_date - datetime.timedelta(days=30)  # 假设每个月30天
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == '6months':
-                date_from = current_date - datetime.timedelta(days=30*6)  # 假设每个月30天
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == '1year':
-                date_from = current_date - datetime.timedelta(days=365)  # 假设每年365天
-                where_clauses.append(f"DATE(date) >= '{date_from}'")
-            elif time_range == 'custom':
-                where_clauses.append(f"DATE(date) BETWEEN '{from_date}' AND '{to_date}'")
-
-    # Process the keyword for filtering
+    # Check if a keyword is provided for filtering
     if keyword:
-        where_clauses.append(
-            f"(license_plate LIKE '%{keyword}%' OR "
-            f"violation LIKE '%{keyword}%' OR "
-            f"location LIKE '%{keyword}%')"
-        )
+        query += """
+            AND (license_plate LIKE CONCAT('%', @keyword, '%')
+            OR violation LIKE CONCAT('%', @keyword, '%')
+            OR location LIKE CONCAT('%', @keyword, '%'))
+        """
+        params.append(bigquery.ScalarQueryParameter('keyword', 'STRING', keyword))
 
-    # Construct the complete SQL query
-    where_clause: str = ' AND '.join(where_clauses) if where_clauses else 'TRUE'
-    query: str = (
-        f"SELECT license_plate, date, time, violation, status, location, traffic_violation_id "
-        f"FROM `traffic_violation_db.reports_trafficviolation` "
-        f"WHERE {where_clause}"
-    )
-
-    # Execute the query
-    query_job = client.query(query)
+    # Configure the BigQuery job
+    job_config = bigquery.QueryJobConfig(query_parameters=params)
+    query_job = client.query(query, job_config=job_config)
     results = query_job.result()
 
-    # Build the response data
-    data: List[Dict[str, str]] = [
-        {
+    # Create a list of dictionaries containing query results
+    data = [{
             'lat': float(location.split(',')[0]),
             'lng': float(location.split(',')[1]),
             'title': f'{license_plate} - {violation}',
@@ -209,9 +231,6 @@ def search_traffic_violations(request: HttpRequest) -> JsonResponse:
         for row in results
         for license_plate, date, time, violation, status, location, traffic_violation_id in [(row.license_plate, row.date, row.time, row.violation, row.status, row.location, row.traffic_violation_id)]
     ]
-
-    # Log the data for debugging purposes
-    print(f"data: {data}")
 
     # Return the data as a JSON response
     return JsonResponse(data, safe=False)
@@ -305,7 +324,7 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: in
         'lat': lat,
         'lng': lng,
         'title': f'{row.license_plate} - {row.violation}',
-        'media': media_files,  # 返回所有媒体文件
+        'media': media_files,
         'license_plate': row.license_plate,
         'date': row.date,
         'time': row.time,
