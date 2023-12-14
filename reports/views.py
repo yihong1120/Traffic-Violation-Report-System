@@ -147,6 +147,8 @@ def edit_report(request):
         form = ReportForm(initial=initial_data)
 
         if request.method == 'POST':
+            print(f"request.POST: {request.POST}")
+            print(f"request.FILES: {request.FILES}")
             form = ReportForm(request.POST, request.FILES)
             if form.is_valid():
                 selected_record.license_plate = form.cleaned_data['license_plate']
@@ -217,23 +219,17 @@ def dashboard(request):
                 violation=form.cleaned_data['violation'],
                 status=form.cleaned_data['status'],
                 location=process_input(form.cleaned_data['location']),
-                officer=request.user if form.cleaned_data['officer'] else None,
-                # traffic_violation_id
+                officer=request.user.username if form.cleaned_data['officer'] else None,  # 这里假设 officer 字段是文本类型
                 username=request.user.username
             )
             traffic_violation.save()
 
             # Handle file uploads
             for file in request.FILES.getlist('media'):
-                # Save file to FileSystemStorage
-                fs = FileSystemStorage()
-                filename = fs.save(file.name, file)
-                file_url = fs.url(filename)
-
                 # Create and save MediaFile instance
                 MediaFile.objects.create(
                     traffic_violation=traffic_violation,
-                    file=filename
+                    file=file  # 直接传递文件对象
                 )
 
             messages.success(request, '报告提交成功。')

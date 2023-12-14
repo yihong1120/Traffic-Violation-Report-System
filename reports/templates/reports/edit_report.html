@@ -45,20 +45,20 @@
                                 
                 <!-- File Preview Container -->
                 <div id="file-preview-container">
-                  {% for media_url in media_urls %}
-                  <div class="file-preview" data-file-url="{{ media_url }}">
-                      <!-- 检查文件扩展名并显示适当的预览 -->
-                      {% if '.jpg' in media_url or '.jpeg' in media_url or '.png' in media_url or '.gif' in media_url or '.JPG' in media_url or '.JEPG' in media_url %}
-                      <img src="{{ media_url }}" height="100">
-                      {% elif '.mp4' in media_url or '.mov' in media_url or '.wmv' in media_url %}
-                      <video height="100" controls>
-                          <source src="{{ media_url }}" type="video/mp4">
-                      </video>
-                      {% endif %}
-                      <!-- 可以添加删除按钮或其他逻辑 -->
-                      <button type="button" class="remove-button" onclick="removePreloadedMedia('{{ media_url }}')">X</button>
-                  </div>
-                  {% endfor %}
+                    {% for media_url in media_urls %}
+                    <div class="file-preview" data-file-url="{{ media_url }}">
+                        <!-- 检查文件扩展名并显示适当的预览 -->
+                        {% if '.jpg' in media_url or '.jpeg' in media_url or '.png' in media_url or '.gif' in media_url or '.JPG' in media_url or '.JEPG' in media_url %}
+                        <img src="{{ media_url }}" height="100">
+                        {% elif '.mp4' in media_url or '.mov' in media_url or '.wmv' in media_url %}
+                        <video height="100" controls>
+                            <source src="{{ media_url }}" type="video/mp4">
+                        </video>
+                        {% endif %}
+                        <!-- 可以添加删除按钮或其他逻辑 -->
+                        <button type="button" class="remove-button" onclick="removePreloadedMedia('{{ media_url }}')">X</button>
+                    </div>
+                    {% endfor %}
                 </div>
                 <button type="submit" id="submit-button">保存修改</button>
                 <input type="hidden" id="removed-media" name="removed_media">
@@ -74,39 +74,46 @@
     // 定义全局变量用于存储上传的文件
     var customFileList = [];
 
+    // 页面加载时初始化按钮状态
     document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById('add-media-button').addEventListener('click', function () {
-            document.getElementById('media-input').click();
+        updateButtonStates();
+    });
+
+    document.getElementById('add-media-button').addEventListener('click', function () {
+        document.getElementById('media-input').click();
+    });
+
+    document.getElementById('media-input').addEventListener('change', function (e) {
+        Array.from(e.target.files).forEach(file => {
+            customFileList.push(file);
+            createPreview(file);
         });
 
-        document.getElementById('media-input').addEventListener('change', function (e) {
-            Array.from(e.target.files).forEach(file => {
-                customFileList.push(file);
-                createPreview(file);
-            });
+        updateFormFiles();
+
+        updateButtonStates(); // 在文件添加后更新按钮状态
+    });
+
+    document.getElementById('submit-button').addEventListener('click', function (e) {
+        e.preventDefault();
+        submitFormWithAjax();
+    });
+
+    // 每次文件选择或移除后更新按钮状态
+    function updateButtonStates() {
+        let mediaCount = document.querySelectorAll('#file-preview-container .file-preview').length;
+        document.getElementById('add-media-button').disabled = mediaCount >= 5;
+        document.getElementById('submit-button').disabled = mediaCount < 1 || mediaCount > 5;
+
+        // 更新所有移除按钮的状态
+        document.querySelectorAll('.remove-button').forEach(button => {
+            button.disabled = mediaCount <= 1;
         });
+    }
 
-        document.getElementById('submit-button').addEventListener('click', function (e) {
-            e.preventDefault();
-            submitFormWithAjax();
-        });
-
-        // 每次文件选择或移除后更新按钮状态
-        function updateButtonStates() {
-            let mediaCount = document.querySelectorAll('#file-preview-container .file-preview').length;
-            document.getElementById('add-media-button').disabled = mediaCount >= 5;
-            document.getElementById('submit-button').disabled = mediaCount < 1 || mediaCount > 5;
-
-            // 更新所有移除按钮的状态
-            document.querySelectorAll('.remove-button').forEach(button => {
-                button.disabled = mediaCount <= 1;
-            });
-        }
-
-        // 在文件选择后更新按钮状态
-        document.getElementById('media-input').addEventListener('change', function () {
-            updateButtonStates();
-        });
+    // 在文件选择后更新按钮状态
+    document.getElementById('media-input').addEventListener('change', function () {
+        updateButtonStates();
     });
 
     function createPreview(file) {
@@ -136,9 +143,11 @@
         let removeButton = document.createElement('button');
         removeButton.innerText = 'X';
         removeButton.classList.add('remove-button');
-        removeButton.onclick = function() {
+        removeButton.onclick = function(event) { // 添加event参数
             removeFile(file.name);
             previewDiv.remove();
+
+            updateButtonStates(); // 更新按钮状态
         };
 
         // 创建进度条
@@ -158,24 +167,24 @@
     }
 
     function removeFile(fileName) {
-      customFileList = customFileList.filter(file => file.name !== fileName);
-      updateFormFiles();
+        customFileList = customFileList.filter(file => file.name !== fileName);
+        updateFormFiles();
 
-      // 更新按钮状态
-      updateButtonStates();
+        // 更新按钮状态
+        updateButtonStates();
     }
 
     function updateFormFiles() {
-      let dataTransfer = new DataTransfer();
-      customFileList.forEach(file => dataTransfer.items.add(file));
-      document.getElementById('media-input').files = dataTransfer.files;
+        let dataTransfer = new DataTransfer();
+        customFileList.forEach(file => dataTransfer.items.add(file));
+        document.getElementById('media-input').files = dataTransfer.files;
     }
 
     document.getElementById('submit-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      customFileList.forEach(file => {
-        uploadFile(file);
-      });
+        e.preventDefault();
+        customFileList.forEach(file => {
+            uploadFile(file);
+        });
     });
 
     function uploadFile(file) {
@@ -205,14 +214,14 @@
     }
 
     function updateProgressBar(fileName, progress) {
-      // 找到所有进度条
-      let allProgressBars = document.querySelectorAll('.progress-bar');
-      // 遍历进度条找到对应的
-      allProgressBars.forEach(bar => {
-        if (bar.dataset.fileName === fileName) {
-          bar.value = progress; // 更新进度
-        }
-      });
+        // 找到所有进度条
+        let allProgressBars = document.querySelectorAll('.progress-bar');
+        // 遍历进度条找到对应的
+        allProgressBars.forEach(bar => {
+            if (bar.dataset.fileName === fileName) {
+            bar.value = progress; // 更新进度
+            }
+        });
     }
 
     function removePreloadedMedia(mediaUrl) {
@@ -279,46 +288,43 @@
 
         xhr.send(formData);
     }
-
-    // 在页面加载时调用一次以初始化按钮状态
-    updateButtonStates(); 
 </script>
 
 <style>
     #file-preview-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
     }
 
     .file-preview {
-      position: relative;
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 5px;
+        position: relative;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 5px;
     }
 
     .file-preview img {
-      display: block;
+        display: block;
     }
 
     .file-preview .remove-button {
-      position: absolute;
-      top: -10px;  /* Adjust as needed */
-      right: -10px; /* Adjust as needed */
-      background-color: red;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 50%;
-      padding: 0 5px;
+        position: absolute;
+        top: -10px;  /* Adjust as needed */
+        right: -10px; /* Adjust as needed */
+        background-color: red;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 50%;
+        padding: 0 5px;
     }
 
     .progress-bar {
-      width: 100%; /* 宽度可以根据需要调整 */
-      margin-top: 5px;
+        width: 100%; /* 宽度可以根据需要调整 */
+        margin-top: 5px;
     }
 </style>
 {% endblock %}
