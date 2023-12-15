@@ -17,7 +17,13 @@ from .forms import CustomUserCreationForm
 from .forms import ReportForm
 from .models import UserProfile
 from .models import TrafficViolation, MediaFile
-from .utils import is_address, get_latitude_and_longitude, process_input, generate_random_code
+from .utils import (
+    is_address, 
+    get_latitude_and_longitude, 
+    process_input, 
+    generate_random_code, 
+    ReportManager,
+)
 from google.cloud import bigquery
 from .mysql_utils import (
     get_traffic_violation_markers,
@@ -29,6 +35,7 @@ from .mysql_utils import (
     update_traffic_violation,
     update_media_files,
 )
+
 
 # 修改後的 search_traffic_violations_view
 def search_traffic_violations_view(request):
@@ -124,100 +131,8 @@ def edit_report(request):
     username = request.user.username
     user_records = get_user_records(username)
 
-    selected_record, form, media_urls = get_selected_record_and_form(request, username)
-def get_selected_record_and_form(request, username):
-    """
-    Retrieves the selected record and form for editing a report.
-
-    Args:
-        request (HttpRequest): The HTTP request object.
-        username (str): The username of the current user.
-
-    Returns:
-        tuple: A tuple containing the selected record, form, and media URLs.
-    """
-    selected_record_id = request.GET.get('record_id')
-    selected_record = None
-    form = None
-    media_urls = []
-
-    if selected_record_id:
-        selected_record = get_object_or_404(TrafficViolation, traffic_violation_id=selected_record_id, username=username)
-        selected_record_media = MediaFile.objects.filter(traffic_violation=selected_record)
-        media_urls = [media.file.url for media in selected_record_media]
-
-        initial_data = {
-            'license_plate': selected_record.license_plate,
-            'date': selected_record.date,
-            'hour': selected_record.time.hour,
-            'minute': selected_record.time.minute,
-            'violation': selected_record.violation,
-            'status': selected_record.status,
-            'location': selected_record.location,
-            'officer': selected_record.officer.username if selected_record.officer else ""
-        }
-        form = ReportForm(initial=initial_data)
-
-    return selected_record, form, media_urls
-            selected_record, form = handle_form_submission(request, form, selected_record)
-            'license_plate': selected_record.license_plate,
-            'date': selected_record.date,
-            'hour': selected_record.time.hour,
-            'minute': selected_record.time.minute,
-            'violation': selected_record.violation,
-            'status': selected_record.status,
-            'location': selected_record.location,
-            'officer': selected_record.officer.username if selected_record.officer else ""
-        }
-        form = ReportForm(initial=initial_data)
-
-        if request.method == 'POST':
-            print(f"request.POST: {request.POST}")
-            print(f"request.FILES: {request.FILES}")
-            form = ReportForm(request.POST, request.FILES)
-            if form.is_valid():
-                selected_record.license_plate = form.cleaned_data['license_plate']
-                selected_record.date = form.cleaned_data['date']
-                selected_record.time = form.cleaned_data['time']
-                selected_record.violation = form.cleaned_data['violation']
-                selected_record.status = form.cleaned_data['status']
-                selected_record.location = form.cleaned_data['location']
-                # 更新 selected_record 的其他字段
-                selected_record.save()
-
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-                saved_files = []
-
-                for media_file in request.FILES.getlist('media'):
-                    _, file_extension = os.path.splitext(media_file.name)
-                    unique_filename = str(uuid.uuid4()) + file_extension
-                    fs.save(unique_filename, media_file)
-                    saved_files.append(unique_filename)
-
-                removed_media = request.POST.get('removed_media', '').split(';')
-
-                # 检查并删除 removed_media 列表中的媒体文件
-                for file_name in removed_media:
-                    # 确保 file_name 不是空字符串
-                    if file_name:
-                        # 构建完整的文件路径
-                        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
-                        
-                        # 检查文件是否存在，且不是目录
-                        if os.path.exists(file_path) and os.path.isfile(file_path):
-                            try:
-                                os.remove(file_path)
-                            except PermissionError as e:
-                                # 如果有权限错误，可以在此处记录错误
-                                print(f"Error removing file {file_path}: {e}")
-                        else:
-                            # 如果文件不存在或路径是一个目录，可以在此处记录
-                            print(f"File not found or is a directory: {file_path}")
-
-                update_media_files(selected_record_id, saved_files, removed_media)
-
-                messages.success(request, "记录和媒体文件已成功更新。")
-                return redirect('edit_report')
+    # selected_record, form, media_urls = get_selected_record_and_form(request, username)
+    selected_record, form, media_urls = ReportManager.get_record_form_and_media(request, username)
 
     context = {
         'user_records': user_records,
