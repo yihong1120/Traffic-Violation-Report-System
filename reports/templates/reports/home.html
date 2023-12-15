@@ -1,6 +1,8 @@
+{% comment %}This template displays the home page of the application, including a map and search functionality for traffic violations.{% endcomment %}
 {% extends "base.html" %}
 
 {% block content %}
+{% comment %}This block contains the main content for the home page, including user greeting, search functionality, and a map displaying traffic violations.{% endcomment %}
 <h2>欢迎来到交通违规报告系统</h2>
 
 {% if request.user.is_authenticated %}
