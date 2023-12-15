@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from .forms import CustomUserCreationForm
 from .models import UserProfile
-from .utils import (
+from utils.utils import (
     generate_random_code, 
 )
 
@@ -18,7 +18,8 @@ def login(request, *args, **kwargs):
     # 如果用戶已登入，重定向到首頁
     if request.user.is_authenticated:
         return redirect('home')
-    return LoginView.as_view()(request, *args, **kwargs)
+    # return LoginView.as_view()(request, *args, **kwargs)
+    return LoginView.as_view(template_name='accounts/login.html')(request, *args, **kwargs)
 
 def validate_username_email(request):
     username = request.GET.get('username', None)

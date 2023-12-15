@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'reports',
     'accounts',
     'utils',
+    'traffic_data',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
@@ -80,7 +81,7 @@ ROOT_URLCONF = 'TrafficViolationReport.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # 添加這行
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

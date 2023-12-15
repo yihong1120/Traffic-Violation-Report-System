@@ -1,9 +1,8 @@
 from typing import List, Dict
 from django.http import JsonResponse, HttpRequest
-from .models import TrafficViolation, MediaFile
-from django.conf import settings
+from reports.models import TrafficViolation, MediaFile
 from django.db.models import Q
-import datetime
+from datetime import datetime, timedelta
 
 def get_user_records(username: str) -> List[Dict]:
     """
@@ -58,34 +57,51 @@ def update_media_files(selected_record_id: str, new_media_files: List[str], remo
     for file_name in new_media_files:
         MediaFile.objects.create(traffic_violation_id=selected_record_id, file=file_name)
 
-def search_traffic_violations(request: HttpRequest) -> JsonResponse:
-    '''
-    This function will search for traffic violations based on a keyword and/or a date range specified in the request parameters.
-
-    Args:
-    - request: An instance of HttpRequest containing the request parameters.
-
-    Returns:
-    A JsonResponse containing the search results for traffic violations.
-    '''
-    keyword = request.GET.get('keyword', '')
-    from_date = request.GET.get('from_date', None)
-    to_date = request.GET.get('to_date', None)
-
-    # Build the query
+def search_traffic_violations(keyword='', time_range='all', from_date=None, to_date=None):
     violations = TrafficViolation.objects.all()
+
+    # 关键字搜索
     if keyword:
         violations = violations.filter(
             Q(license_plate__icontains=keyword) | 
             Q(violation__icontains=keyword) |
             Q(location__icontains=keyword)
         )
-    if from_date and to_date:
-        violations = violations.filter(date__range=[from_date, to_date])
 
-    # Prepare the response data
+    # 时间范围搜索
+    if time_range == 'custom':
+        # 自定义日期范围
+        if from_date and to_date:
+            violations = violations.filter(date__range=[from_date, to_date])
+    else:
+        # 预设日期范围
+        end_date = datetime.now()
+        if time_range == '1day':
+            start_date = end_date - timedelta(days=1)
+        elif time_range == '1week':
+            start_date = end_date - timedelta(weeks=1)
+        elif time_range == '1month':
+            start_date = end_date - timedelta(days=30)
+        elif time_range == '6months':
+            start_date = end_date - timedelta(days=180)
+        elif time_range == '1year':
+            start_date = end_date - timedelta(days=365)
+        else:
+            # 默认为'all'，不做日期过滤
+            start_date = None
+
+        if start_date:
+            violations = violations.filter(date__range=[start_date, end_date])
+
+
+    # 准备响应数据
     data = list(violations.values())
-    return JsonResponse(data, safe=False)
+
+    # 将 UUID 字段转换为字符串
+    for violation in data:
+        violation['traffic_violation_id'] = str(violation['traffic_violation_id'])
+    print(f"data: {data}")
+    return data
 
 
 def get_traffic_violation_markers(request: HttpRequest) -> JsonResponse:

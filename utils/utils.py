@@ -9,8 +9,8 @@ from django.core.files.storage import FileSystemStorage
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from typing import Tuple, Optional, List
-from .forms import ReportForm
-from .models import TrafficViolation, MediaFile
+from reports.forms import ReportForm
+from reports.models import TrafficViolation, MediaFile
 from .mysql_utils import (
     update_media_files,
 )

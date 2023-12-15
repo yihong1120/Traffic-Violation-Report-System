@@ -1,31 +1,13 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.views import LoginView
-from django.contrib.auth import login
-from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.contrib import messages
-from django.http import JsonResponse
-from django.conf import settings
-from django.core.files.storage import FileSystemStorage
-from django.shortcuts import get_object_or_404
-import uuid
-import os
-from datetime import datetime
-from .forms import CustomUserCreationForm
 from .forms import ReportForm
-from .models import UserProfile
 from .models import TrafficViolation, MediaFile
-from .utils import (
+from utils.utils import (
     process_input, 
     ReportManager,
 )
-from google.cloud import bigquery
-from .mysql_utils import (
-    get_traffic_violation_markers,
-    get_traffic_violation_details,
-    search_traffic_violations,
+from utils.mysql_utils import (
     get_user_records,
 )
 
@@ -57,7 +39,7 @@ def dashboard(request):
                 violation=form.cleaned_data['violation'],
                 status=form.cleaned_data['status'],
                 location=process_input(form.cleaned_data['location']),
-                officer=request.user.username if form.cleaned_data['officer'] else None,  # 这里假设 officer 字段是文本类型
+                officer=request.user.username if form.cleaned_data['officer'] else '',  # 这里假设 officer 字段是文本类型
                 username=request.user.username
             )
             traffic_violation.save()
