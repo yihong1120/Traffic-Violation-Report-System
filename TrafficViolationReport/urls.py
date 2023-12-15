@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+# The requested commented-out code block appears to be already removed.
 from django.contrib.auth.views import LogoutView
 from django.conf import settings
 from django.conf.urls.static import static
