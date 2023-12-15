@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from reports.models import TrafficViolation, MediaFile
-from reports.views import dashboard, search_traffic_violations_view, traffic_violation_markers_view, traffic_violation_details_view
+from reports.views import dashboard, search_traffic_violations_view, traffic_violation_markers_view, traffic_violation_details_view, edit_report
 
 # Create your tests here.
 
@@ -93,10 +93,40 @@ class DashboardViewTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('testuser', 'test@example.com', 'password')
         self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='editor', email='editor@example.com', password='editorpassword')
+        self.traffic_violation = TrafficViolation.objects.create(
+            license_plate='EDIT123',
+            violation='Test Editing',
+            status='In Review',
+            location='Editing Location',
+            officer=self.user.username
+        )
+        self.media_file = MediaFile.objects.create(
+            traffic_violation=self.traffic_violation,
+            file=SimpleUploadedFile('edit_test_media.jpg', b'edit test content', content_type='image/jpeg')
+        )
 
     def add_messages_to_request(self, request):
         messages_storage = FallbackStorage(request)
         request._messages = messages_storage
+
+    def test_edit_report_view_get_request(self):
+        # Test edit_report function with GET request
+        request = self.factory.get('/edit_report/')
+        request.user = self.user
+        response = edit_report(request)
+        self.assertEqual(response.status_code, 200)
+        # Add more assertions to test the returned context and HTML
+
+    def test_edit_report_view_post_request(self):
+        # Test edit_report function with POST request
+        request = self.factory.post('/edit_report/', data={
+            'form_data': 'some_edit_data'  # Replace with actual form data required by edit_report
+        })
+        request.user = self.user
+        response = edit_report(request)
+        self.assertEqual(response.status_code, 302)  # Assuming a redirect after successful POST
+        # Add more assertions to test the form submission and redirect
 
     def test_file_saving(self):
         # Implement the file saving test case
@@ -109,6 +139,21 @@ class DashboardViewTest(TestCase):
         self.assertEqual(response.status_code, 302)  # Assuming a redirect after successful file upload
         # Check if the file was saved correctly
         self.assertTrue(MediaFile.objects.filter(file='new_test_media.jpg').exists())
+
+    def test_dashboard_view_valid_report_submission(self):
+        # Test report submission through dashboard view with valid data
+        request = self.factory.post('/dashboard/', data={
+            'license_plate': 'TEST456',
+            'violation': 'Test Violation',
+            'status': 'Test Status',
+            'location': 'Test Location',
+            # Add additional fields as required by the ReportForm
+        })
+        request.user = self.user
+        self.add_messages_to_request(request)
+        response = dashboard(request)
+        self.assertEqual(response.status_code, 302)  # Assuming a redirect after successful report submission
+        self.assertTrue(TrafficViolation.objects.filter(license_plate='TEST456').exists())
 
     def test_mediafile_instance_creation(self):
         # Implement the MediaFile instance creation test case
