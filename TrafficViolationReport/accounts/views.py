@@ -1,3 +1,9 @@
+"""
+Module accounts.views
+
+This module contains the views for user account management, including login, registration, verification, and other account-related views.
+"""
+
 from django.contrib import messages
 from django.shortcuts import redirect
 
@@ -11,6 +17,17 @@ def redirect_if_authenticated(request):
         return redirect('home')
 
 def login(request, *args, **kwargs):
+    """
+    View for user login. Redirects to the home page if the user is already authenticated.
+
+    Parameters:
+    - request: The HTTP request object
+    - args: Additional positional arguments
+    - kwargs: Additional keyword arguments
+
+    Returns:
+    - A rendered login view or a redirect to the home page
+    """
     redirect_if_authenticated(request)
     return LoginView.as_view(template_name='accounts/login.html')(request, *args, **kwargs)
 
@@ -21,6 +38,15 @@ def check_email_exists(email):
     return User.objects.filter(email=email).exists()
 
 def validate_username_email(request):
+    """
+    Validates if the username or email already exists.
+
+    Parameters:
+    - request: The HTTP request object with 'username' and 'email' GET parameters.
+
+    Returns:
+    - JsonResponse with data containing potential errors for username and email
+    """
     username = request.GET.get('username', None)
     email = request.GET.get('email', None)
 
@@ -56,6 +82,15 @@ def redirect_to_verify():
     return redirect('verify')
 
 def register(request):
+    """
+    View for user registration. Processes the registration form and sends a verification email.
+
+    Parameters:
+    - request: The HTTP request object
+
+    Returns:
+    - A redirect to the verification view or the registration form view
+    """
     form = CustomUserCreationForm(request.POST if request.method == 'POST' else None)
     user = handle_post_request(request, form)
     if user:
@@ -78,6 +113,15 @@ def redirect_to_login():
     return redirect('login')
 
 def verify(request):
+    """
+    View for verifying a user's email. Processes the POST request with a verification code.
+
+    Parameters:
+    - request: The HTTP request object
+
+    Returns:
+    - A redirect to the login view or the verification code form view
+    """
     if request.method == 'POST':
         code = request.POST.get('code')
         if not code:
