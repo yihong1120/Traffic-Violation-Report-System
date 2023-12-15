@@ -126,6 +126,16 @@ def edit_report(request):
 
     selected_record, form, media_urls = get_selected_record_and_form(request, username)
 def get_selected_record_and_form(request, username):
+    """
+    Retrieves the selected record and form for editing a report.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        username (str): The username of the current user.
+
+    Returns:
+        tuple: A tuple containing the selected record, form, and media URLs.
+    """
     selected_record_id = request.GET.get('record_id')
     selected_record = None
     form = None
