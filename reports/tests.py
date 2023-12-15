@@ -124,6 +124,11 @@ class DashboardViewTest(TestCase):
         # Add more assertions to test the returned context and HTML
 
     def test_edit_report_view_post_request(self):
+        """
+        Test the edit_report function with a POST request.
+
+        This test case checks if the edit_report function returns a redirect response (status code 302) after successful form submission. Additional assertions can be added to test the form submission and redirect.
+        """
         # Test edit_report function with POST request
         request = self.factory.post('/edit_report/', data={
             'form_data': 'some_edit_data'  # Replace with actual form data required by edit_report
