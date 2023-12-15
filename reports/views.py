@@ -28,12 +28,8 @@ from google.cloud import bigquery
 from .mysql_utils import (
     get_traffic_violation_markers,
     get_traffic_violation_details,
-    save_to_mysql,
     search_traffic_violations,
     get_user_records,
-    get_media_records,
-    update_traffic_violation,
-    update_media_files,
 )
 
 
@@ -131,7 +127,6 @@ def edit_report(request):
     username = request.user.username
     user_records = get_user_records(username)
 
-    # selected_record, form, media_urls = get_selected_record_and_form(request, username)
     selected_record, form, media_urls = ReportManager.get_record_form_and_media(request, username)
 
     context = {
