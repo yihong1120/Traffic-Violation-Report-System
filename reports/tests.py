@@ -111,6 +111,11 @@ class DashboardViewTest(TestCase):
         request._messages = messages_storage
 
     def test_edit_report_view_get_request(self):
+        """
+        Test the edit_report function with a GET request.
+
+        This test case checks if the edit_report function returns a successful response (status code 200) when called with a GET request. Additional assertions can be added to test the returned context and HTML.
+        """
         # Test edit_report function with GET request
         request = self.factory.get('/edit_report/')
         request.user = self.user
@@ -119,6 +124,11 @@ class DashboardViewTest(TestCase):
         # Add more assertions to test the returned context and HTML
 
     def test_edit_report_view_post_request(self):
+        """
+        Test the edit_report function with a POST request.
+
+        This test case checks if the edit_report function returns a redirect response (status code 302) after successful form submission. Additional assertions can be added to test the form submission and redirect.
+        """
         # Test edit_report function with POST request
         request = self.factory.post('/edit_report/', data={
             'form_data': 'some_edit_data'  # Replace with actual form data required by edit_report
@@ -141,6 +151,13 @@ class DashboardViewTest(TestCase):
         self.assertTrue(MediaFile.objects.filter(file='new_test_media.jpg').exists())
 
     def test_dashboard_view_valid_report_submission(self):
+        """
+        Test report submission through the dashboard view with valid data.
+
+        This test function verifies that the dashboard view returns a redirect response (status code 302)
+        after successful report submission. It also checks if the submitted report is
+        correctly saved in the database.
+        """
         # Test report submission through dashboard view with valid data
         request = self.factory.post('/dashboard/', data={
             'license_plate': 'TEST456',
