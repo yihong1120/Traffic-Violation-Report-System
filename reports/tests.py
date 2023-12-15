@@ -111,6 +111,11 @@ class DashboardViewTest(TestCase):
         request._messages = messages_storage
 
     def test_edit_report_view_get_request(self):
+        """
+        Test the edit_report function with a GET request.
+
+        This test case checks if the edit_report function returns a successful response (status code 200) when called with a GET request. Additional assertions can be added to test the returned context and HTML.
+        """
         # Test edit_report function with GET request
         request = self.factory.get('/edit_report/')
         request.user = self.user
