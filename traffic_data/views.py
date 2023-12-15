@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.conf import settings
-from .mysql_utils import (
+from utils.mysql_utils import (
     get_traffic_violation_markers,
     get_traffic_violation_details,
     search_traffic_violations,
@@ -20,7 +20,7 @@ def search_traffic_violations_view(request):
 
 # 修改後的 traffic_violation_markers_view
 def traffic_violation_markers_view(request):
-    data = get_traffic_violation_markers()
+    data = get_traffic_violation_markers(request)
     return JsonResponse(data, safe=False)
 
 # 修改後的 traffic_violation_details_view
@@ -30,4 +30,4 @@ def traffic_violation_details_view(request, traffic_violation_id):
 
 def home(request):
     context = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY}
-    return render(request, 'reports/home.html', context)
+    return render(request, 'traffic_data/home.html', context)

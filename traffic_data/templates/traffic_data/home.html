@@ -1,5 +1,5 @@
-{% comment %}This template displays the home page of the application, including a map and search functionality for traffic violations.{% endcomment %}
 {% extends "base.html" %}
+{% comment %}This template displays the home page of the application, including a map and search functionality for traffic violations.{% endcomment %}
 
 {% block content %}
 {% comment %}This block contains the main content for the home page, including user greeting, search functionality, and a map displaying traffic violations.{% endcomment %}
@@ -7,12 +7,12 @@
 
 {% if request.user.is_authenticated %}
     <p>您好，{{ request.user.username }}！</p>
-    <form action="{% url 'logout' %}" method="post">
+    <form action="{% url 'accounts:logout' %}" method="post">
         {% csrf_token %}
         <button type="submit">登出</button>
     </form>
 {% else %}
-    <p>请<a href="{% url 'login' %}">登录</a>继续。</p>
+    <p>请<a href="{% url 'accounts:login' %}">登录</a>继续。</p>
 {% endif %}
 
 <div id="search-container">

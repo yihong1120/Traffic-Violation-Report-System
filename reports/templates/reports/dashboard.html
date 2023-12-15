@@ -149,7 +149,7 @@
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
         let xhr = new XMLHttpRequest();
-        xhr.open('POST', '{% url "file_upload" %}', true);
+        xhr.open('POST', '{% url "reports:file_upload" %}', true);
 
         xhr.upload.onprogress = function(e) {
             if (e.lengthComputable) {
