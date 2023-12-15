@@ -4,6 +4,7 @@ import uuid
 import os
 from django.utils.deconstruct import deconstructible
 
+
 class TrafficViolation(models.Model):
     VIOLATIONS = [
         ('紅線停車', '紅線停車'),
@@ -52,8 +53,3 @@ class MediaFile(models.Model):
         TrafficViolation, on_delete=models.CASCADE, null=True, blank=True
     )
     file = models.FileField(upload_to = PathAndRename(''))
-
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    email_verified = models.BooleanField(default=False)
-    email_verified_code = models.CharField(max_length=6, blank=True, null=True)
