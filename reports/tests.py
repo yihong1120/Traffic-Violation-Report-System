@@ -151,6 +151,13 @@ class DashboardViewTest(TestCase):
         self.assertTrue(MediaFile.objects.filter(file='new_test_media.jpg').exists())
 
     def test_dashboard_view_valid_report_submission(self):
+        """
+        Test report submission through the dashboard view with valid data.
+
+        This test function verifies that the dashboard view returns a redirect response (status code 302)
+        after successful report submission. It also checks if the submitted report is
+        correctly saved in the database.
+        """
         # Test report submission through dashboard view with valid data
         request = self.factory.post('/dashboard/', data={
             'license_plate': 'TEST456',
