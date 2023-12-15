@@ -8,8 +8,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('reports/', include('reports.urls', namespace='reports')),
     path('accounts/', include('accounts.urls', namespace='accounts')),
+    path('traffic_data/', include('traffic_data.urls', namespace='traffic_data')),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('', include('reports.urls')),  # 假设 home 视图在 reports 应用程序中
+    path('', include('traffic_data.urls', namespace='traffic_data')),
 ]
 
 # 在开发环境中服务媒体文件
