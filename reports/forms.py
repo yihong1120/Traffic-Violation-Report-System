@@ -1,38 +1,10 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.conf import settings
 from multiupload.fields import MultiFileField
 from datetime import datetime
 import pytz
 from .models import TrafficViolation
 
-class CustomUserCreationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-
-    class Meta:
-        model = User
-        fields = ("username", "email", "password1", "password2")
-
-    def clean_username(self):
-        username = self.cleaned_data['username']
-        if User.objects.filter(username=username).exists():
-            raise ValidationError("這個用戶名已被使用")
-        return username
-
-    def clean_email(self):
-        email = self.cleaned_data['email']
-        if User.objects.filter(email=email).exists():
-            raise ValidationError("這個電子郵件地址已被使用")
-        return email
-
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data["email"]
-        if commit:
-            user.save()
-        return user
     
 class ReportForm(forms.Form):
     VIOLATIONS = TrafficViolation.VIOLATIONS
@@ -52,8 +24,6 @@ class ReportForm(forms.Form):
     status = forms.ChoiceField(label="檢舉結果", choices=STATUS, initial='其他')
     location = forms.CharField(label="地點", max_length=100)
     officer = forms.CharField(label="承辦人", max_length=100, required=False)
-    # traffic violatio id
-    # user name
     media = MultiFileField(label="媒體", min_num=1, max_num=5, max_file_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE, required=False)
 
     def clean(self):
