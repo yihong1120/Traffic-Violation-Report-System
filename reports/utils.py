@@ -4,10 +4,11 @@ import os
 import uuid
 import googlemaps
 from django.conf import settings
+from django.http import HttpRequest
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 from .forms import ReportForm
 from .models import TrafficViolation, MediaFile
 from .mysql_utils import (
@@ -89,21 +90,56 @@ def process_input(input_string: str) -> str:
         return input_string
 
 class ReportManager:
-    def __init__(self, request, username):
+    """
+    Manages the retrieval and processing of traffic violation reports.
+
+    Attributes:
+        request (HttpRequest): The HTTP request object.
+        username (str): The username of the current user.
+    """
+
+    def __init__(self, request: HttpRequest, username: str):
+        """
+        Initialise the ReportManager with the given request and username.
+        """
         self.request = request
         self.username = username
 
-    def get_selected_record(self):
+    def get_selected_record(self) -> Optional[TrafficViolation]:
+        """
+        Retrieve the selected traffic violation record.
+
+        Returns:
+            The TrafficViolation instance if found, otherwise None.
+        """
         selected_record_id = self.request.GET.get('record_id')
         if selected_record_id:
             return get_object_or_404(TrafficViolation, traffic_violation_id=selected_record_id, username=self.username)
         return None
 
-    def get_media_urls(self, selected_record):
+    def get_media_urls(self, selected_record: TrafficViolation) -> List[str]:
+        """
+        Get the media URLs associated with the selected record.
+
+        Args:
+            selected_record: The TrafficViolation instance.
+
+        Returns:
+            A list of media file URLs.
+        """
         selected_record_media = MediaFile.objects.filter(traffic_violation=selected_record)
         return [media.file.url for media in selected_record_media]
 
-    def get_initial_form_data(self, selected_record):
+    def get_initial_form_data(self, selected_record: TrafficViolation) -> dict:
+        """
+        Prepare the initial data for the report form based on the selected record.
+
+        Args:
+            selected_record: The TrafficViolation instance.
+
+        Returns:
+            A dictionary with initial data for the form.
+        """
         return {
             'license_plate': selected_record.license_plate,
             'date': selected_record.date,
@@ -115,22 +151,45 @@ class ReportManager:
             'officer': selected_record.officer.username if selected_record.officer else ""
         }
 
-    def handle_form_submission(self, form, selected_record):
+    def handle_form_submission(self, form: ReportForm, selected_record: TrafficViolation) -> ReportForm:
+        """
+        Process the form submission for a traffic violation report.
+
+        Args:
+            form: The form instance to be processed.
+            selected_record: The TrafficViolation instance being updated.
+
+        Returns:
+            The form instance after processing.
+        """
         if self.request.method == 'POST':
             form = ReportForm(self.request.POST, self.request.FILES)
             if form.is_valid():
                 self.update_record(form.cleaned_data, selected_record)
                 self.handle_media_files(selected_record)
-                messages.success(self.request, "记录和媒体文件已成功更新。")
+                messages.success(self.request, "The record and media files have been successfully updated.")
                 return redirect('edit_report')
         return form
 
-    def update_record(self, cleaned_data, selected_record):
+    def update_record(self, cleaned_data: dict, selected_record: TrafficViolation) -> None:
+        """
+        Update the selected record with cleaned data from the form.
+
+        Args:
+            cleaned_data: The validated data from the form.
+            selected_record: The TrafficViolation instance to update.
+        """
         for field, value in cleaned_data.items():
             setattr(selected_record, field, value)
         selected_record.save()
 
-    def handle_media_files(self, selected_record):
+    def handle_media_files(self, selected_record: TrafficViolation) -> None:
+        """
+        Handle the uploading and removal of media files associated with the record.
+
+        Args:
+            selected_record: The TrafficViolation instance whose media files are being managed.
+        """
         fs = FileSystemStorage(location=settings.MEDIA_ROOT)
         saved_files = []
 
@@ -142,9 +201,15 @@ class ReportManager:
 
         removed_media = self.request.POST.get('removed_media', '').split(';')
         self.remove_media_files(removed_media)
-        update_media_files(selected_record.id, saved_files, removed_media)
+        update_media_files(selected_record.traffic_violation_id, saved_files, removed_media)
 
-    def remove_media_files(self, removed_media):
+    def remove_media_files(self, removed_media: List[str]) -> None:
+        """
+        Remove media files that are no longer needed.
+
+        Args:
+            removed_media: A list of filenames to be removed.
+        """
         for file_name in removed_media:
             if file_name:
                 file_path = os.path.join(settings.MEDIA_ROOT, file_name)
@@ -157,16 +222,26 @@ class ReportManager:
                     print(f"File not found or is a directory: {file_path}")
 
     @classmethod
-    def get_selected_record_and_form(request, username):
-        manager = ReportManager(request, username)
+    def get_record_form_and_media(cls, request: HttpRequest, username: str) -> Tuple[Optional[TrafficViolation], Optional[ReportForm], List[str]]:
+        """
+        Class method to retrieve the selected record, form, and media URLs.
+
+        Args:
+            request: The HTTP request object.
+            username: The username of the current user.
+
+        Returns:
+            A tuple containing the selected record, form, and media URLs.
+        """
+        manager = cls(request, username)
         selected_record = manager.get_selected_record()
         form = None
         media_urls = []
-    
+
         if selected_record:
             media_urls = manager.get_media_urls(selected_record)
             initial_data = manager.get_initial_form_data(selected_record)
             form = ReportForm(initial=initial_data)
             form = manager.handle_form_submission(form, selected_record)
-    
+
         return selected_record, form, media_urls
