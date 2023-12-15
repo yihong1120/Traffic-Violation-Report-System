@@ -1,8 +1,19 @@
 import re
 import random
+import os
+import uuid
 import googlemaps
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
 from typing import Tuple, Optional
+from .forms import ReportForm
+from .models import TrafficViolation, MediaFile
+from .mysql_utils import (
+    update_media_files,
+)
+
 
 def generate_random_code() -> str:
     """
@@ -76,3 +87,86 @@ def process_input(input_string: str) -> str:
     else:
         # If the input string could not be geocoded, return it unchanged.
         return input_string
+
+class ReportManager:
+    def __init__(self, request, username):
+        self.request = request
+        self.username = username
+
+    def get_selected_record(self):
+        selected_record_id = self.request.GET.get('record_id')
+        if selected_record_id:
+            return get_object_or_404(TrafficViolation, traffic_violation_id=selected_record_id, username=self.username)
+        return None
+
+    def get_media_urls(self, selected_record):
+        selected_record_media = MediaFile.objects.filter(traffic_violation=selected_record)
+        return [media.file.url for media in selected_record_media]
+
+    def get_initial_form_data(self, selected_record):
+        return {
+            'license_plate': selected_record.license_plate,
+            'date': selected_record.date,
+            'hour': selected_record.time.hour,
+            'minute': selected_record.time.minute,
+            'violation': selected_record.violation,
+            'status': selected_record.status,
+            'location': selected_record.location,
+            'officer': selected_record.officer.username if selected_record.officer else ""
+        }
+
+    def handle_form_submission(self, form, selected_record):
+        if self.request.method == 'POST':
+            form = ReportForm(self.request.POST, self.request.FILES)
+            if form.is_valid():
+                self.update_record(form.cleaned_data, selected_record)
+                self.handle_media_files(selected_record)
+                messages.success(self.request, "记录和媒体文件已成功更新。")
+                return redirect('edit_report')
+        return form
+
+    def update_record(self, cleaned_data, selected_record):
+        for field, value in cleaned_data.items():
+            setattr(selected_record, field, value)
+        selected_record.save()
+
+    def handle_media_files(self, selected_record):
+        fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+        saved_files = []
+
+        for media_file in self.request.FILES.getlist('media'):
+            _, file_extension = os.path.splitext(media_file.name)
+            unique_filename = str(uuid.uuid4()) + file_extension
+            fs.save(unique_filename, media_file)
+            saved_files.append(unique_filename)
+
+        removed_media = self.request.POST.get('removed_media', '').split(';')
+        self.remove_media_files(removed_media)
+        update_media_files(selected_record.id, saved_files, removed_media)
+
+    def remove_media_files(self, removed_media):
+        for file_name in removed_media:
+            if file_name:
+                file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+                if os.path.exists(file_path) and os.path.isfile(file_path):
+                    try:
+                        os.remove(file_path)
+                    except PermissionError as e:
+                        print(f"Error removing file {file_path}: {e}")
+                else:
+                    print(f"File not found or is a directory: {file_path}")
+
+    @classmethod
+    def get_selected_record_and_form(request, username):
+        manager = ReportManager(request, username)
+        selected_record = manager.get_selected_record()
+        form = None
+        media_urls = []
+    
+        if selected_record:
+            media_urls = manager.get_media_urls(selected_record)
+            initial_data = manager.get_initial_form_data(selected_record)
+            form = ReportForm(initial=initial_data)
+            form = manager.handle_form_submission(form, selected_record)
+    
+        return selected_record, form, media_urls
