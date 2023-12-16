@@ -153,6 +153,16 @@ def redirect_to_login():
 
 def verify(request):
     """
+    Verifies a user's email address using a submitted verification code.
+
+    Parameters:
+    - request: HttpRequest object containing the verification code submitted by the user in a POST request.
+
+    Returns:
+    - An HttpResponse object that redirects to the login view upon successful verification,
+      or renders the verification code form view with error messages if confirmation fails.
+    """
+    """
     View for verifying a user's email. Processes the POST request with a verification code.
 
     Parameters:
