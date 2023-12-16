@@ -9,6 +9,9 @@ class LogoutViewTest(TestCase):
         self.client = Client()
 
     def test_logout_view(self):
-        """Test the behavior of the logout view."""
-        response = self.client.get('/logout/')
+        # 先模拟登录
+        self.client.login(username='testuser', password='testpassword')
+        
+        # 测试注销视图
+        response = self.client.post('/logout/')
         self.assertEqual(response.status_code, 302)

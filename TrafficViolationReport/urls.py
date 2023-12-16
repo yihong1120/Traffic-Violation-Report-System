@@ -17,7 +17,7 @@ urlpatterns = [
     path('login/', login, name='login'),
     path('register/', register, name='register'),
     path('account/', account_view, name='account_view'),
-    # path('logout/', LogoutView.as_view(), name='logout'),
+    path('logout/', LogoutView.as_view(), name='logout'),
 
     path('reports/', include('reports.urls', namespace='reports')),
     path('accounts/', include('accounts.urls', namespace='accounts')),
