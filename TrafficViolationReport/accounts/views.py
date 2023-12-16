@@ -50,6 +50,15 @@ def check_email_exists(email):
 
 def validate_username_email(request):
     """
+    Validates if the username or email already exists in the system to prevent duplicate entries.
+
+    Parameters:
+    - request: HttpRequest object containing 'username' and 'email' GET parameters.
+
+    Returns:
+    - JsonResponse containing the existence errors for both username and email, if any.
+    """
+    """
     Validates if the username or email already exists.
 
     Parameters:
