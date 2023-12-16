@@ -103,13 +103,13 @@ def redirect_to_verify():
 
 def register(request):
     """
-    View for user registration. Processes the registration form and sends a verification email.
+    Handles user registration requests by processing the registration form and sending a verification email upon successful registration.
 
     Parameters:
-    - request: The HTTP request object
+    - request: HttpRequest object containing registration data.
 
     Returns:
-    - A redirect to the verification view or the registration form view
+    - HttpResponseRedirect object to the verification page upon successful registration, or to the registration form with validation errors if present.
     """
     form = CustomUserCreationForm(request.POST if request.method == 'POST' else None)
     user = handle_post_request(request, form)
