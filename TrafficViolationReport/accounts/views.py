@@ -4,6 +4,12 @@ Module accounts.views
 This module contains the views for user account management, including login, registration, verification, and other account-related views.
 """
 
+"""
+Module accounts.views
+
+This module contains the views for user account management, including login, registration, verification, and other account-related views.
+"""
+
 from django.contrib import messages
 from django.shortcuts import redirect
 
