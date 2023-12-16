@@ -26,7 +26,7 @@ def traffic_violation_markers_view(request):
 # 修改後的 traffic_violation_details_view
 def traffic_violation_details_view(request, traffic_violation_id):
     data = get_traffic_violation_details(traffic_violation_id)
-    return JsonResponse(data)
+    return JsonResponse(data, safe=False)
 
 def home(request):
     context = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY}
