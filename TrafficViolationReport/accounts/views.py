@@ -18,6 +18,17 @@ def redirect_if_authenticated(request):
 
 def login(request, *args, **kwargs):
     """
+    Handles user login requests by authenticating users and redirecting to the home page upon successful login.
+
+    Parameters:
+    - request: HttpRequest object containing login credentials.
+    - args: Additional positional arguments.
+    - kwargs: Additional keyword arguments.
+
+    Returns:
+    - HttpResponse object that represents the login page, or a redirection to the home page if the login is successful.
+    """
+    """
     View for user login. Redirects to the home page if the user is already authenticated.
 
     Parameters:
