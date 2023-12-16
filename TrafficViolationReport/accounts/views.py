@@ -176,6 +176,18 @@ def verify(request):
         if not code:
             messages.error(request, '請輸入驗證碼。')
             return render(request, 'accounts/verify.html')
+
+def account_view(request):
+    """
+    Displays the user's account information on the account view page.
+
+    Parameters:
+    - request: HttpRequest object for the current session.
+
+    Returns:
+    - HttpResponse object that renders the account view with the user's account information.
+    """
+    # Implementation for account view goes here
         verify_user_email(request, code)
         return redirect_to_login()
     return render(request, 'accounts/verify.html')
