@@ -85,6 +85,15 @@ def handle_post_request(request, form):
             return form.save()
 
 def create_user_profile(user):
+    """
+    Creates a user profile for a new user with a generated email verification code.
+
+    Parameters:
+    - user: The User model instance for which the profile is being created.
+
+    Returns:
+    - The generated email verification code for the user's profile.
+    """
     code = generate_random_code()
     UserProfile.objects.create(user=user, email_verified_code=code)
     return code
