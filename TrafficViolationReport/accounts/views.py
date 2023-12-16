@@ -99,6 +99,16 @@ def create_user_profile(user):
     return code
 
 def send_verification_email(user, code):
+    """
+    Sends a verification email with a unique code to a new user's email address.
+
+    Parameters:
+    - user: User instance to which the verification email will be sent.
+    - code: the verification code to be included in the email.
+
+    Returns:
+    None
+    """
     send_mail(
         subject="驗證您的帳戶",
         message="您的驗證碼是：{code}".format(code=code),
