@@ -115,8 +115,8 @@ def search_traffic_violations(keyword: str = '', time_range: str = 'all',
     markers: List[dict] = [
         {
             'traffic_violation_id': str(violation.traffic_violation_id),  # Convert UUID to string
-            'lat': float(violation.location.split(',')[0]),  # Extract and convert latitude to float
-            'lng': float(violation.location.split(',')[1])   # Extract and convert longitude to float
+            'lat': violation.latitude,  # Extract and convert latitude to float
+            'lng': violation.longtitude,  # Extract and convert longitude to float
         }
         for violation in violations
     ]
@@ -134,12 +134,12 @@ def get_traffic_violation_markers(request: HttpRequest) -> JsonResponse:
     Returns:
         A JsonResponse containing the markers for traffic violations.
     """
-    violations = TrafficViolation.objects.values('traffic_violation_id', 'location')
+    violations = TrafficViolation.objects.values('traffic_violation_id', 'latitude', 'longtitude')
     markers = [
         {
             'traffic_violation_id': str(v['traffic_violation_id']),
-            'lat': float(v['location'].split(',')[0]),
-            'lng': float(v['location'].split(',')[1])
+            'lat': float(v['latitude']),
+            'lng': float(v['longtitude']),
         }
         for v in violations
     ]
@@ -162,7 +162,7 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: st
         violation = TrafficViolation.objects.get(traffic_violation_id=traffic_violation_id)
         media_files = list(MediaFile.objects.filter(traffic_violation=violation).values_list('file', flat=True))
 
-        lat, lng = map(float, violation.location.split(','))
+        lat, lng = violation.latitude, violation.longtitude
         data = {
             'lat': lat,
             'lng': lng,
