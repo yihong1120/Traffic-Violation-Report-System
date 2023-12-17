@@ -66,6 +66,16 @@ def get_latitude_and_longitude(address: str) -> Tuple[Optional[float], Optional[
     return location['lng'], location['lat']
 
 def coordinates_to_address(lat, lng):
+    """
+    Convert latitude and longitude to an address using the Google Maps API.
+
+    Args:
+        lat (float): The latitude to convert.
+        lng (float): The longitude to convert.
+
+    Returns:
+        str: The address corresponding to the latitude and longitude, or None if no address was found.
+    """
     # 初始化 Google Maps 客户端
     gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
 
@@ -77,6 +87,15 @@ def coordinates_to_address(lat, lng):
         return result[0]['formatted_address']
 
 def extract_lat_long(s):
+    """
+    Extract latitude and longitude from a string.
+
+    Args:
+        s (str): The string to extract latitude and longitude from.
+
+    Returns:
+        tuple: The latitude and longitude extracted from the string, or None if no latitude and longitude were found.
+    """
     numbers = re.findall(r"[-+]?\d*\.\d+|\d+", s)
     coordinates = [float(num) for num in numbers]
 
