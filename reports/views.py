@@ -31,25 +31,30 @@ def dashboard(request):
     if request.method == 'POST':
         form = ReportForm(request.POST, request.FILES)
         if form.is_valid():
-            # Create a new TrafficViolation instance using the validated form data
+            # 处理输入并提取位置信息
+            address, latitude, longtitude, user_input_type = process_input(form.cleaned_data['location'])
+
+            # 创建一个新的 TrafficViolation 实例
             traffic_violation = TrafficViolation(
                 license_plate=form.cleaned_data['license_plate'],
                 date=form.cleaned_data['date'],
                 time=form.cleaned_data['time'],
                 violation=form.cleaned_data['violation'],
                 status=form.cleaned_data['status'],
-                location=process_input(form.cleaned_data['location']),
-                officer=request.user.username if form.cleaned_data['officer'] else '',  # 这里假设 officer 字段是文本类型
+                address=address,
+                latitude=latitude, 
+                longtitude=longtitude, 
+                user_input_type=user_input_type,
+                officer=request.user.username if form.cleaned_data['officer'] else '',
                 username=request.user.username
             )
             traffic_violation.save()
 
-            # Handle file uploads
+            # 处理文件上传
             for file in request.FILES.getlist('media'):
-                # Create and save MediaFile instance
                 MediaFile.objects.create(
                     traffic_violation=traffic_violation,
-                    file=file  # 直接传递文件对象
+                    file=file
                 )
 
             messages.success(request, '报告提交成功。')

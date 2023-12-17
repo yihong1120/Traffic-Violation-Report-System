@@ -51,24 +51,41 @@ def get_latitude_and_longitude(address: str) -> Tuple[Optional[float], Optional[
     Returns:
         tuple: The longitude and latitude of the address, or (None, None) if the address could not be geocoded.
     """
-    # Check if the input is an address.
-    if is_address(address):
-        # Create a client for the Google Maps API.
-        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
-        # Get the geocoding result for the address.
-        geocode_result = gmaps.geocode(address)
+    # Create a client for the Google Maps API.
+    gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
+    # Get the geocoding result for the address.
+    geocode_result = gmaps.geocode(address)
 
-        # If no result was found, return None for both longitude and latitude.
-        if not geocode_result:
-            return None, None
-
-        # Extract the location from the geocoding result.
-        location = geocode_result[0]['geometry']['location']
-        # Return the longitude and latitude.
-        return location['lng'], location['lat']
-    else:
-        # If the input is not an address, return None for both longitude and latitude.
+    # If no result was found, return None for both longitude and latitude.
+    if not geocode_result:
         return None, None
+
+    # Extract the location from the geocoding result.
+    location = geocode_result[0]['geometry']['location']
+    # Return the longitude and latitude.
+    return location['lng'], location['lat']
+
+def coordinates_to_address(lat, lng):
+    # 初始化 Google Maps 客户端
+    gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
+
+    # 进行反向地理编码查询
+    result = gmaps.reverse_geocode((lat, lng))
+
+    if result:
+        # 返回第一个结果的格式化地址
+        return result[0]['formatted_address']
+
+def extract_lat_long(s):
+    numbers = re.findall(r"[-+]?\d*\.\d+|\d+", s)
+    coordinates = [float(num) for num in numbers]
+
+    if len(coordinates) >= 2:
+        latitude, longitude = coordinates[:2]
+        if -90 <= latitude <= 90 and -180 <= longitude <= 180:
+            return latitude, longitude
+
+    return None
 
 def process_input(input_string: str) -> str:
     """
@@ -80,14 +97,22 @@ def process_input(input_string: str) -> str:
     Returns:
         str: The longitude and latitude of the input string if it is an address, or the original input string otherwise.
     """
-    # Try to get the longitude and latitude of the input string.
-    lat, lng = get_latitude_and_longitude(input_string)
-    # If both longitude and latitude were found, return them as a string.
-    if lat is not None and lng is not None:
-        return f"{lng},{lat}"
+    # Check if the input is an address.
+    if is_address(input_string):
+        # Try to get the longitude and latitude of the input string.
+        lat, lng = get_latitude_and_longitude(input_string)
+        # If both longitude and latitude were found, return them as a string.
+        if lat is not None and lng is not None:
+            return input_string, lat, lng, "address" #user_input is address
     else:
         # If the input string could not be geocoded, return it unchanged.
-        return input_string
+        lat, lng = extract_lat_long(input_string)
+        address = coordinates_to_address(lat, lng)
+        # f"{lng},{lat}" to address
+        # return address, f"{lng},{lat}", #user_input is coords
+        return address, lat, lng, "coords"
+
+    return None
 
 class ReportManager:
     """
@@ -147,7 +172,9 @@ class ReportManager:
             'minute': selected_record.time.minute,
             'violation': selected_record.violation,
             'status': selected_record.status,
-            'location': selected_record.location,
+            #location
+            'address': selected_record.address, # user input is address
+            'coords': f"{selected_record.latitude}, {selected_record.longitude}",# user input is coords
             'officer': selected_record.officer.username if selected_record.officer else ""
         }
 

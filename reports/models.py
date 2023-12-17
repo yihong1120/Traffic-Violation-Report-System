@@ -30,7 +30,10 @@ class TrafficViolation(models.Model):
     time = models.TimeField()
     violation = models.CharField(max_length=100, choices=VIOLATIONS)
     status = models.CharField(max_length=50, choices=STATUS)
-    location = models.CharField(max_length=255)
+    address = models.CharField(max_length=255, blank=True, null=True)  # 地址字段
+    latitude = models.FloatField()  # 纬度
+    longtitude = models.FloatField()  # 经度
+    user_input_type = models.CharField(max_length=100, blank=True, null=True)  # 用户输入类型
     officer = models.CharField(max_length=255, blank=True, default='')
     traffic_violation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150, blank=True, null=True)
