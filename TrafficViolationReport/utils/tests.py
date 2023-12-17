@@ -31,18 +31,30 @@ class MySqlUtilsTest(unittest.TestCase):
 class TestProcessInput(unittest.TestCase):
 
     def test_process_input_with_address(self):
+        """Test the process_input function with an address as input.
+
+        The expected output is a tuple of coordinates.
+        """
         address_input = '1600 Amphitheatre Parkway, Mountain View, CA'
         expected_output = (37.4224764, -122.0842499)
         output = process_input(address_input)
         self.assertEqual(output, expected_output)
 
     def test_process_input_with_coordinates(self):
+        """Test the process_input function with coordinates as input.
+
+        The expected output is an address.
+        """
         coordinates_input = '37.4224764,-122.0842499'
         expected_output = '1600 Amphitheatre Parkway, Mountain View, CA'
         output = process_input(coordinates_input)
         self.assertEqual(output, expected_output)
 
     def test_process_input_with_invalid_input(self):
+        """Test the process_input function with an invalid input.
+
+        The expected output is the same invalid input.
+        """
         invalid_input = 'not a valid input'
         expected_output = 'not a valid input'
         output = process_input(invalid_input)
