@@ -87,6 +87,15 @@ def coordinates_to_address(lat, lng):
         return result[0]['formatted_address']
 
 def extract_lat_long(s):
+    """
+    Extract latitude and longitude from a string.
+
+    Args:
+        s (str): The string to extract latitude and longitude from.
+
+    Returns:
+        tuple: The latitude and longitude extracted from the string, or None if no latitude and longitude were found.
+    """
     numbers = re.findall(r"[-+]?\d*\.\d+|\d+", s)
     coordinates = [float(num) for num in numbers]
 
