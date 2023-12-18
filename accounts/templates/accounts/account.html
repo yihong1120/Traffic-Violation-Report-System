@@ -5,6 +5,22 @@
 
 <p>Hello, {{ request.user.username }}!</p>
 <p>Email: {{ request.user.email }}</p>
-<!-- 這裡可以加入其他帳號相關的管理選項，如修改密碼、更新email等 -->
+
+<!-- 修改密碼鏈接 -->
+<p><a href="{% url 'accounts:password_change' %}">Change Password</a></p>
+
+<!-- 更新電子郵件表單 -->
+<form method="post" action="{% url 'accounts:email_change' %}">
+  {% csrf_token %}
+  <label for="email">Update Email:</label>
+  <input type="email" id="email" name="email" value="{{ request.user.email }}" required>
+  <input type="submit" value="Update Email">
+</form>
+
+<!-- 社交帳號連結鏈接（假設使用 django-allauth） -->
+<p><a href="{% url 'accounts:socialaccount_connections' %}">Social Account Connections</a></p>
+
+<!-- 帳號刪除鏈接 -->
+<p><a href="{% url 'accounts:account_delete' %}">Delete Account</a></p>
 
 {% endblock %}
