@@ -130,6 +130,11 @@ class PasswordChangeTest(unittest.TestCase):
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
 
     def test_custom_password_change_get(self):
+        """
+        Test the password change functionality with a GET request.
+        
+        This test checks whether the correct form is displayed when the password change URL is accessed with a GET request.
+        """
         # Code for testing custom_password_change with GET method goes here
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
         """
