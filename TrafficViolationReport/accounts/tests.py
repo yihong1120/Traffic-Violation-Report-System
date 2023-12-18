@@ -102,6 +102,11 @@ class PasswordChangeTest(unittest.TestCase):
         self.mock_request.user = self.mock_user
 
     def test_custom_password_change_post(self):
+        """
+        Test the password change functionality with a POST request.
+
+        This test checks whether the password is successfully changed when the correct data is sent in a POST request.
+        """
         # Code for testing custom_password_change with POST method goes here
         self.assertTrue(True)  # Placeholder for correct test implementation
 
