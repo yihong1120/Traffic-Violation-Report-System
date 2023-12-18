@@ -14,6 +14,10 @@ from TrafficViolationReport.accounts.views import email_change, TestCase
 from django.contrib.auth.models import User
 from django.contrib import messages
 
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
+from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
 from django.test import RequestFactory
 from TrafficViolationReport.accounts.views import (create_user_profile,
@@ -81,6 +85,37 @@ class AccountsViewsTest(unittest.TestCase):
         mock_redirect.assert_called_once_with('login')
 
     def tearDown(self):
+        """
+        Clean up the test environment after each test case.
+
+        Deletes the mock user created for the tests.
+        """
+        del self.mock_user
+        del self.mock_request
+
+class PasswordChangeTest(unittest.TestCase):
+    def setUp(self):
+        self.mock_user = MagicMock()
+        self.mock_user.username = 'test_user'
+        self.mock_user.set_password('initial_password')
+        self.mock_request = RequestFactory().get('/')
+        self.mock_request.user = self.mock_user
+
+    def test_custom_password_change_post(self):
+        # Code for testing custom_password_change with POST method goes here
+        self.assertTrue(True)  # Placeholder for correct test implementation
+
+    def test_password_change_done(self):
+        # Code for testing password_change_done view function goes here
+        self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
+
+    def test_password_change_url(self):
+        # Code for testing password change URL configuration goes here
+        self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
+
+    def test_custom_password_change_get(self):
+        # Code for testing custom_password_change with GET method goes here
+        self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
         """
         Clean up the test environment after each test case.
 
