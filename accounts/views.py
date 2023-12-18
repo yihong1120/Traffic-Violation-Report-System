@@ -11,6 +11,9 @@ from django.conf import settings
 from .forms import CustomUserCreationForm
 from .models import UserProfile
 from utils.utils import generate_random_code
+from django.utils import timezone
+import datetime
+
 
 # 假設你有一個 EmailChangeForm 來處理電子郵件的更新
 from .forms import EmailChangeForm
@@ -38,15 +41,16 @@ def validate_username_email(request):
 
 
 def register(request):
-    """
-    註冊新用戶。如果請求為POST，則處理表單提交。
-    """
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()  # 保存用戶模型實例
+            user = form.save()
+            # 设置验证码超时时间为30分钟后
+            profile = UserProfile.objects.create(user=user, email_verified_code='your_code')
+            profile.verification_code_expiry = timezone.now() + datetime.timedelta(minutes=30)
+            profile.save()
             create_user_profile(user)
-            return redirect('verify')  # 確保有一個名為'verify'的URL映射
+            return redirect('verify')
     else:
         form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
@@ -77,9 +81,6 @@ def send_verification_email(email, code):
 
 
 def verify(request):
-    """
-    驗證用戶電子郵件地址。如果驗證碼匹配，則更新用戶資料檔。
-    """
     if request.method == 'POST':
         code = request.POST.get('code')
         if not code:
@@ -88,6 +89,9 @@ def verify(request):
 
         try:
             profile = UserProfile.objects.get(user=request.user, email_verified_code=code)
+            if profile.is_verification_code_expired():
+                messages.error(request, '驗證碼已過期。')
+                return render(request, 'accounts/verify.html')
             profile.email_verified = True
             profile.email_verified_code = ''
             profile.save()
@@ -98,6 +102,7 @@ def verify(request):
             return render(request, 'accounts/verify.html')
     else:
         return render(request, 'accounts/verify.html')
+
 
 
 @login_required
