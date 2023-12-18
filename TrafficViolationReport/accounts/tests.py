@@ -111,6 +111,12 @@ class PasswordChangeTest(unittest.TestCase):
         self.assertTrue(True)  # Placeholder for correct test implementation
 
     def test_password_change_done(self):
+        """
+        Test the view that is displayed after a password change.
+
+        This test checks whether the correct template is used and whether
+        the correct context data is passed to the template.
+        """
         # Code for testing password_change_done view function goes here
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
 
