@@ -122,6 +122,27 @@ def email_change(request):
     return render(request, 'account/email_change_form.html', {'form': form})
 
 @login_required
+def custom_password_change(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # 更新 session 以保持用戶登入狀態
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been updated successfully!')
+            return redirect('accounts:password_change_done')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'accounts/password_change_form.html', {'form': form})
+
+@login_required
+def password_change_done(request):
+    # 顯示密碼更改成功的消息
+    return render(request, 'accounts/password_change_done.html')
+
+@login_required
 def social_account_connections(request):
     # 這裡的實現將取決於你如何處理社交帳號連結
     # 如果你使用 django-allauth，它已經提供了視圖來處理社交帳號連結
@@ -137,22 +158,3 @@ def account_delete(request):
         messages.success(request, 'Your account has been deleted.')
         return redirect('home')  # 假設有一個名為 'home' 的 URL
     return render(request, 'accounts/account_delete_confirm.html')
-
-# 密碼變更視圖可以使用 Django 內建的 PasswordChangeView
-# 如果你想要自定義這個視圖，你可以這樣做：
-@login_required
-def change_password(request):
-    if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)  # 重要：更新 session 以保持用戶登入狀態
-            messages.success(request, 'Your password was successfully updated!')
-            return redirect('profile')  # 假設有一個名為 'profile' 的 URL
-        else:
-            messages.error(request, 'Please correct the error below.')
-    else:
-        form = PasswordChangeForm(request.user)
-    return render(request, 'account/change_password.html', {
-        'form': form
-    })
