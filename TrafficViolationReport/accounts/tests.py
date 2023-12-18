@@ -8,6 +8,11 @@ This file contains a series of unit tests for testing the user account managemen
 """
 import unittest
 from unittest.mock import MagicMock, patch
+from django.test import RequestFactory
+from TrafficViolationReport.accounts.forms import EmailChangeForm, PasswordChangeForm
+from TrafficViolationReport.accounts.views import email_change, TestCase
+from django.contrib.auth.models import User
+from django.contrib import messages
 
 from django.contrib.auth.models import User
 from django.test import RequestFactory
@@ -83,3 +88,29 @@ class AccountsViewsTest(unittest.TestCase):
         """
         del self.mock_user
         del self.mock_request
+
+class EmailChangeViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='johndoe', email='john@example.com', password='123')
+        self.request = self.factory.post('/accounts/email_change/', {'email': 'newemail@example.com'}, follow=True)
+        self.request.user = self.user
+        self.form = EmailChangeForm(data=self.request.POST, instance=self.user)
+
+    def test_email_change_successful(self):
+        if self.form.is_valid():
+            response = email_change(self.request)
+            self.assertEqual(response.status_code, 302)
+            self.assertRedirects(response, '/profile')
+            self.assertTrue(list(messages.get_messages(self.request)), 'Your email has been updated.')
+
+    def test_email_change_form_invalid(self):
+        request = self.factory.post('/accounts/email_change/', {'email': 'not-an-email'}, follow=True)
+        request.user = self.user
+        response = email_change(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'account/email_change_form.html')
+        self.assertIn('form', response.context_data)
+
+    def tearDown(self):
+        self.user.delete()
