@@ -19,7 +19,13 @@ from reports.models import TrafficViolation, MediaFile
 
 
 class TrafficViolationReportTest(unittest.TestCase):
+    """
+    This class contains unit tests for the Traffic Violation Report system.
+    """
     def setUp(self):
+        """
+        This method sets up the test environment by initializing mock user, traffic violations, and media files.
+        """
         """
         Part of the unittest.TestCase setup. Initializes mock user, traffic violations,
         and media files for the tests.
@@ -38,6 +44,9 @@ class TrafficViolationReportTest(unittest.TestCase):
     @patch('reports.models.TrafficViolation')
     @patch('reports.forms.ReportForm')
     def test_dashboard_post(self, mock_ReportForm, mock_TrafficViolation, mock_MediaFile):
+        """
+        This method tests the POST request to the dashboard view.
+        """
         mock_request = RequestFactory().post('/dashboard', data={})
         mock_request.user = self.mock_user
         mock_ReportForm.is_valid.return_value = True
@@ -69,6 +78,9 @@ class TrafficViolationReportTest(unittest.TestCase):
     @patch('reports.views.ReportManager.get_record_form_and_media')
     @patch('utils.mysql_utils.get_user_records')
     def test_edit_report(self, mock_get_user_records, mock_get_record_form_and_media):
+        """
+        This method tests the GET request to the edit report view.
+        """
         mock_request = RequestFactory().get('/edit_report')
         mock_request.user = self.mock_user
         mock_get_user_records.return_value = self.mock_traffic_violations
@@ -82,6 +94,9 @@ class TrafficViolationReportTest(unittest.TestCase):
 
     def tearDown(self):
         """
+        This method cleans up the test environment by deleting the mock user, traffic violations, and media files.
+        """
+        """
         Part of the unittest.TestCase teardown. Deletes the mock user, traffic violations,
         and media files after each test.
         """
@@ -92,6 +107,9 @@ class TrafficViolationReportTest(unittest.TestCase):
     @patch('utils.bigquery_utils.get_user_records')
     @patch('utils.mysql_utils.get_user_records')
     def test_get_user_records(self, mock_mysql_get_user_records, mock_bigquery_get_user_records):
+        """
+        This method tests the `get_user_records` function.
+        """
         mock_mysql_get_user_records.return_value = self.mock_traffic_violations
         mock_bigquery_get_user_records.return_value = self.mock_traffic_violations
 
@@ -103,6 +121,9 @@ class TrafficViolationReportTest(unittest.TestCase):
 
     @patch('reports.views.dashboard')
     def test_dashboard_get(self, mock_dashboard):
+        """
+        This method tests the GET request to the dashboard view.
+        """
         mock_request = RequestFactory().get('/dashboard')
         mock_request.user = self.mock_user
 
