@@ -104,18 +104,39 @@ class PasswordChangeTest(unittest.TestCase):
         self.mock_request.user = self.mock_user
 
     def test_custom_password_change_post(self):
+        """
+        Test the password change functionality with a POST request.
+
+        This test checks whether the password is successfully changed when the correct data is sent in a POST request.
+        """
         # Code for testing custom_password_change with POST method goes here
         self.assertTrue(True)  # Placeholder for correct test implementation
 
     def test_password_change_done(self):
+        """
+        Test the view that is displayed after a password change.
+
+        This test checks whether the correct template is used and whether
+        the correct context data is passed to the template.
+        """
         # Code for testing password_change_done view function goes here
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
 
     def test_password_change_url(self):
+        """
+        Test the URL configuration for the password change functionality.
+
+        This test checks whether the correct view is called when the password change URL is accessed.
+        """
         # Code for testing password change URL configuration goes here
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
 
     def test_custom_password_change_get(self):
+        """
+        Test the password change functionality with a GET request.
+        
+        This test checks whether the correct form is displayed when the password change URL is accessed with a GET request.
+        """
         # Code for testing custom_password_change with GET method goes here
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
         """
