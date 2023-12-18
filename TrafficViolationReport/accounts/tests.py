@@ -90,6 +90,8 @@ class AccountsViewsTest(unittest.TestCase):
 
         Deletes the mock user created for the tests.
         """
+        # Clean up the test environment after each test case for AccountsViewsTest.
+        # Deletes the mock user created for the tests.
         del self.mock_user
         del self.mock_request
 
@@ -154,11 +156,13 @@ class EmailChangeViewTest(TestCase):
         self.form = EmailChangeForm(data=self.request.POST, instance=self.user)
 
     def test_email_change_successful(self):
-        if self.form.is_valid():
-            response = email_change(self.request)
-            self.assertEqual(response.status_code, 302)
-            self.assertRedirects(response, '/profile')
-            self.assertTrue(list(messages.get_messages(self.request)), 'Your email has been updated.')
+        # Call the EmailChangeView with the 'POST' request created in setUp method
+        response = self.client.post('/accounts/email_change/', {'email': 'newemail@example.com'})
+        self.assertEqual(response.status_code, 302, 'Email change should redirect on success')
+        self.assertRedirects(response, '/profile', 'Redirect should go to profile page on success')
+        # Check that a success message was added to the messages
+        messages_list = list(messages.get_messages(response.wsgi_request))
+        self.assertIn('Your email has been updated.', [msg.message for msg in messages_list], 'Success message should be present in messages')
 
     def test_email_change_form_invalid(self):
         request = self.factory.post('/accounts/email_change/', {'email': 'not-an-email'}, follow=True)
@@ -169,4 +173,5 @@ class EmailChangeViewTest(TestCase):
         self.assertIn('form', response.context_data)
 
     def tearDown(self):
+        # Clean up by deleting the user created in setUp
         self.user.delete()
