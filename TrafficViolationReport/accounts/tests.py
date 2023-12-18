@@ -121,6 +121,11 @@ class PasswordChangeTest(unittest.TestCase):
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
 
     def test_password_change_url(self):
+        """
+        Test the URL configuration for the password change functionality.
+
+        This test checks whether the correct view is called when the password change URL is accessed.
+        """
         # Code for testing password change URL configuration goes here
         self.assertTrue(True)  # Placeholder assertion, to be replaced with actual test code
 
