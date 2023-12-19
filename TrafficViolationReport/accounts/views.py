@@ -86,20 +86,58 @@ def validate_username_email(request):
     return JsonResponse(data)
 
 def validate_form(request, form):
+    """
+    Validates a form based on a POST request and returns the form if it is valid.
+
+    Parameters:
+    - request: HttpRequest object for the current session.
+    - form: The form instance to be validated.
+
+    Returns:
+    - The validated form instance if the form is valid; otherwise, None.
+    """
     if request.method == 'POST' and form.is_valid():
         return form
 
 def create_user(request, form):
+    """
+    Creates a user by validating a form and saving it if it is valid.
+
+    Parameters:
+    - request: HttpRequest object for the current session.
+    - form: The form instance to create a user with.
+
+    Returns:
+    - The newly created User instance if the form is valid; otherwise, None.
+    """
     validated_form = validate_form(request, form)
     if validated_form is not None:
         return validated_form.save()
 
 def create_user_profile(user):
+    """
+    Creates a user profile for the given user.
+
+    Parameters:
+    - user: The User instance for which the profile is to be created.
+
+    Returns:
+    - The newly created UserProfile instance.
+    """
     code = generate_random_code()
     UserProfile.objects.create(user=user, email_verified_code=code)
     return UserProfile.objects.get(user=user)
 
 def send_verification_email(user):
+    """
+    Sends a verification email to the given user.
+
+    Parameters:
+    - user: The User instance to whom the verification email is to be sent.
+
+    Returns:
+    - None
+    """
         subject="驗證您的帳戶",
         message="您的驗證碼是：{code}".format(code=code),
         from_email="trafficviolationtaiwan@gmail.com",
@@ -111,6 +149,15 @@ def redirect_to_verify():
     return redirect('verify')
 
 def register(request):
+    """
+    Registers a user by creating a user, creating a user profile, sending a verification email, and redirecting to the verification page.
+
+    Parameters:
+    - request: HttpRequest object for the current session.
+
+    Returns:
+    - An HttpResponse object that redirects to the verification view upon successful registration, or renders the registration form view with errors if the registration fails.
+    """
     form = CustomUserCreationForm(request.POST or None)
     form = validate_form(request, form)
     if form.is_valid():
