@@ -4,6 +4,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.models import User
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import login, authenticate
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
@@ -11,6 +12,9 @@ from django.conf import settings
 from .forms import CustomUserCreationForm
 from .models import UserProfile
 from utils.utils import generate_random_code
+from django.utils import timezone
+import datetime
+
 
 # 假設你有一個 EmailChangeForm 來處理電子郵件的更新
 from .forms import EmailChangeForm
@@ -38,17 +42,21 @@ def validate_username_email(request):
 
 
 def register(request):
-    """
-    註冊新用戶。如果請求為POST，則處理表單提交。
-    """
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()  # 保存用戶模型實例
+            user = form.save()
             create_user_profile(user)
-            return redirect('verify')  # 確保有一個名為'verify'的URL映射
+
+            # 使用 authenticate 和 login 函數來登入用戶
+            user = authenticate(username=user.username, password=form.cleaned_data['password1'])
+            if user is not None:
+                login(request, user)
+
+            return redirect('accounts:verify')
     else:
         form = CustomUserCreationForm()
+
     return render(request, 'accounts/register.html', {'form': form})
 
 
@@ -57,7 +65,12 @@ def create_user_profile(user):
     為新註冊的用戶創建用戶資料檔。
     """
     code = generate_random_code()
-    UserProfile.objects.create(user=user, email_verified_code=code)
+    verification_code_expiry = timezone.now() + datetime.timedelta(minutes=30)
+    UserProfile.objects.create(
+        user=user, 
+        email_verified_code=code, 
+        verification_code_expiry=verification_code_expiry
+    )
     send_verification_email(user.email, code)
 
 
@@ -77,9 +90,6 @@ def send_verification_email(email, code):
 
 
 def verify(request):
-    """
-    驗證用戶電子郵件地址。如果驗證碼匹配，則更新用戶資料檔。
-    """
     if request.method == 'POST':
         code = request.POST.get('code')
         if not code:
@@ -87,12 +97,25 @@ def verify(request):
             return render(request, 'accounts/verify.html')
 
         try:
-            profile = UserProfile.objects.get(user=request.user, email_verified_code=code)
+            # 假設你的 UserProfile 模型有一個 user 屬性指向 User 模型
+            profile = UserProfile.objects.get(email_verified_code=code)
+            if profile.is_verification_code_expired():
+                messages.error(request, '驗證碼已過期。')
+                return render(request, 'accounts/verify.html')
+
+            # 驗證碼正確，且未過期，則設置電子郵件已驗證
             profile.email_verified = True
             profile.email_verified_code = ''
             profile.save()
+
+            # 自動登入用戶
+            user = profile.user
+            # 由於用戶已經通過電子郵件驗證，因此可以安全地登入用戶
+            # 不需要再次檢查密碼，因為他們已經通過電子郵件驗證了他們的身份
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
             messages.success(request, '您的帳戶已經成功驗證。')
-            return redirect('login')
+            return redirect('home')  # 或者重定向到你的首頁視圖
         except UserProfile.DoesNotExist:
             messages.error(request, '驗證碼錯誤。')
             return render(request, 'accounts/verify.html')
@@ -107,7 +130,6 @@ def account_view(request):
     """
     return render(request, 'accounts/account.html', {'user': request.user})
 
-from .forms import EmailChangeForm
 
 @login_required
 def email_change(request):

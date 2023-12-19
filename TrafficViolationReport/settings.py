@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 import json
 import os
@@ -81,7 +82,7 @@ ROOT_URLCONF = 'TrafficViolationReport.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # 添加這行
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -174,3 +175,15 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
+
+# Celery 配置
+CELERY_BEAT_SCHEDULE = {
+    'delete-expired-unverified-users-every-hour': {
+        'task': 'accounts.tasks.delete_expired_unverified_users',
+        'schedule': timedelta(hours=1),
+    },
+}
+'''
+celery -A TrafficViolationReport worker --loglevel=info
+celery -A TrafficViolationReport beat --loglevel=info
+'''

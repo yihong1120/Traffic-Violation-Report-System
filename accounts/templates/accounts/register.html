@@ -36,7 +36,7 @@ $(document).ready(function(){
         var username = $("#id_username").val();
         var email = $("#id_email").val();
         $.ajax({
-            url: '/validate-username-email/',
+            url: '{% url "accounts:validate-username-email" %}',
             data: {
                 'username': username,
                 'email': email
