@@ -85,37 +85,21 @@ def validate_username_email(request):
     }
     return JsonResponse(data)
 
-def handle_post_request(request, form):
-    if request.method == 'POST':
-        if form.is_valid():
-            return form.save()
+def validate_form(request, form):
+    if request.method == 'POST' and form.is_valid():
+        return form
+
+def create_user(request, form):
+    validated_form = validate_form(request, form)
+    if validated_form is not None:
+        return validated_form.save()
 
 def create_user_profile(user):
-    """
-    Creates a user profile for a new user with a generated email verification code.
-
-    Parameters:
-    - user: The User model instance for which the profile is being created.
-
-    Returns:
-    - The generated email verification code for the user's profile.
-    """
     code = generate_random_code()
     UserProfile.objects.create(user=user, email_verified_code=code)
-    return code
+    return UserProfile.objects.get(user=user)
 
-def send_verification_email(user, code):
-    """
-    Sends a verification email with a unique code to a new user's email address.
-
-    Parameters:
-    - user: User instance to which the verification email will be sent.
-    - code: the verification code to be included in the email.
-
-    Returns:
-    None
-    """
-    send_mail(
+def send_verification_email(user):
         subject="驗證您的帳戶",
         message="您的驗證碼是：{code}".format(code=code),
         from_email="trafficviolationtaiwan@gmail.com",
@@ -127,20 +111,12 @@ def redirect_to_verify():
     return redirect('verify')
 
 def register(request):
-    """
-    Handles user registration requests by processing the registration form and sending a verification email upon successful registration.
-
-    Parameters:
-    - request: HttpRequest object containing registration data.
-
-    Returns:
-    - HttpResponseRedirect object to the verification page upon successful registration, or to the registration form with validation errors if present.
-    """
-    form = CustomUserCreationForm(request.POST if request.method == 'POST' else None)
-    user = handle_post_request(request, form)
-    if user:
-        code = create_user_profile(user)
-        send_verification_email(user, code)
+    form = CustomUserCreationForm(request.POST or None)
+    form = validate_form(request, form)
+    if form.is_valid():
+        user = create_user(request, form)
+        user_profile = create_user_profile(user)
+        send_verification_email(user_profile)
         return redirect_to_verify()
     return render(request, 'accounts/register.html', {'form': form})
 
