@@ -1,6 +1,11 @@
 """
 Module accounts.views
 
+This module contains views related to handling user accounts in the Traffic Violation Report System. This includes user registration, login, email verification, and other account-related functionalities. The purpose is to manage user interactions with their account and streamline the process of user authentication and management.
+"""
+
+"""
+
 This module contains the views for user account management, including login, registration, verification, and other account-related views.
 """
 
