@@ -20,7 +20,9 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
 from django.test import RequestFactory
-from TrafficViolationReport.accounts.views import (create_user_profile,
+from TrafficViolationReport.accounts.views import (validate_form,
+                                                   create_user,
+                                                   create_user_profile,
                                                    send_verification_email,
                                                    verify)
 
@@ -40,6 +42,30 @@ class AccountsViewsTest(unittest.TestCase):
         self.mock_request.user = self.mock_user
 
     @patch('TrafficViolationReport.accounts.views.UserProfile.objects.create')
+    def test_validate_form(self):
+        """
+        Test the validate_form function in the accounts views module.
+
+        This function mocks the form.is_valid method, calls validate_form with the mock request and form, 
+        and asserts that form.is_valid is called once.
+        """
+        mock_form = MagicMock()
+        mock_form.is_valid = MagicMock(return_value=True)
+        self.mock_request.method = 'POST'
+        validate_form(self.mock_request, mock_form)
+        mock_form.is_valid.assert_called_once()
+
+    def test_create_user(self):
+        """
+        Test the create_user function in the accounts views module.
+
+        This function mocks the validate_form function, calls create_user with the mock request and form, 
+        and asserts that validate_form is called with the correct arguments.
+        """
+        mock_form = MagicMock()
+        with patch('TrafficViolationReport.accounts.views.validate_form', return_value=mock_form) as mock_validate_form:
+            create_user(self.mock_request, mock_form)
+            mock_validate_form.assert_called_once_with(self.mock_request, mock_form)
     def test_create_user_profile(self, mock_create):
         """
         Test the create_user_profile function in the accounts views module.
@@ -51,6 +77,25 @@ class AccountsViewsTest(unittest.TestCase):
         mock_create.assert_called_once_with(user=self.mock_user, email_verified_code=unittest.mock.ANY)
 
     @patch('TrafficViolationReport.accounts.views.send_mail')
+    @patch('TrafficViolationReport.accounts.views.create_user')
+    @patch('TrafficViolationReport.accounts.views.create_user_profile')
+    @patch('TrafficViolationReport.accounts.views.send_verification_email')
+    def test_register(self, mock_send_verification_email, mock_create_user_profile, mock_create_user):
+        """
+        Test the register function in the accounts views module.
+
+        This function mocks the new functions, calls register with the mock request, 
+        and asserts that the new functions are called with the correct arguments.
+        """
+        mock_form = MagicMock()
+        mock_form.is_valid = MagicMock(return_value=True)
+        self.mock_request.method = 'POST'
+        self.mock_request.POST = {}
+        with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
+            register(self.mock_request)
+            mock_create_user.assert_called_once_with(self.mock_request, mock_form)
+            mock_create_user_profile.assert_called_once_with(self.mock_user)
+            mock_send_verification_email.assert_called_once_with(self.mock_user)
     def test_send_verification_email(self, mock_send_mail):
         """
         Test the send_verification_email function in the accounts views module.
