@@ -32,12 +32,12 @@ def login(request, *args, **kwargs):
     Handles user login requests by authenticating users and redirecting to the home page upon successful login.
 
     Parameters:
-    - request: HttpRequest object containing login credentials.
+    - request (HttpRequest): The request object containing the user's login credentials.
     - args: Additional positional arguments.
     - kwargs: Additional keyword arguments.
 
     Returns:
-    - HttpResponse object that represents the login page, or a redirection to the home page if the login is successful.
+    - HttpResponse: Renders the login page or redirects to the home page upon successful login.
     """
     """
     View for user login. Redirects to the home page if the user is already authenticated.
@@ -190,11 +190,11 @@ def verify(request):
     Verifies a user's email address using a submitted verification code.
 
     Parameters:
-    - request: HttpRequest object containing the verification code submitted by the user in a POST request.
+    - request (HttpRequest): An object containing the verification code submitted by the user in a POST request.
 
     Returns:
     - An HttpResponse object that redirects to the login view upon successful verification,
-      or renders the verification code form view with error messages if confirmation fails.
+      or renders the verification code form view with error messages if the verification fails.
     """
     """
     View for verifying a user's email. Processes the POST request with a verification code.
