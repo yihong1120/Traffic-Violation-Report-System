@@ -4,7 +4,8 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.models import User
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import authenticate
+from django.contrib.auth import login as auth_login
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
@@ -112,7 +113,7 @@ def verify(request):
             user = profile.user
             # 由於用戶已經通過電子郵件驗證，因此可以安全地登入用戶
             # 不需要再次檢查密碼，因為他們已經通過電子郵件驗證了他們的身份
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
             messages.success(request, '您的帳戶已經成功驗證。')
             return redirect('home')  # 或者重定向到你的首頁視圖
