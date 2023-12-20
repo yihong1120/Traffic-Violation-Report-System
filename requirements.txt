@@ -6,5 +6,5 @@ django-allauth==0.59
 mysqlclient==2.2.1
 google-cloud-bigquery==3.14.1
 googlemaps==4.10.0
-ultralytics==8.0.227
+ultralytics==8.0.228
 celery==5.3.6
