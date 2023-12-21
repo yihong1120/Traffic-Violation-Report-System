@@ -1,4 +1,30 @@
-from license_plate_insights.image_processing import ImageProcessor
+    """
+    The CarLicensePlateDetector class is responsible for detecting and recognizing car
+    license plates in an image or a stream of images from a video.
+
+    It utilizes a pre-trained YOLO (You Only Look Once) model for efficient and accurate
+    object detection and an OCR (Optical Character Recognition) system to read characters
+    on the plates. The class provides methods for processing still images, videos, and
+    extracting license plate text using the OCR.
+
+    Attributes:
+        image_processor (ImageProcessor): Instance used for image pre-processing.
+        object_detector (ObjectDetector): YOLO-based detector for finding license plates.
+        ocr (OCR): OCR system instance for recognizing characters on the plates.
+
+    Methods:
+        recognize_license_plate: Recognizes and annotates the license plate in an image.
+        load_image: Loads an image from disk.
+        extract_license_plate_text: Extracts text from a region containing a license plate.
+        display_and_save: Displays a list of images and saves them to disk.
+        process_video: Processes a video to detect and recognize license plates in every frame.
+        get_media_info: Returns media information like DateTime, GPSLatitude, and GPSLongitude.
+        get_image_info: Extracts information from an image file.
+        extract_gps_data: Extracts GPS information from an image file.
+        parse_gps_info: Parses raw GPS metadata info to human-readable format.
+        convert_to_degrees: Converts raw GPS degree data into decimal degrees.
+        get_video_info: Extracts metadata information from a video file.
+    """from license_plate_insights.image_processing import ImageProcessor
 from license_plate_insights.object_detection import ObjectDetector
 from license_plate_insights.ocr import OCR
 
