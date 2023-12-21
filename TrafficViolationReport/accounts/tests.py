@@ -175,6 +175,7 @@ class AccountsViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'accounts:verify')
     def test_handle_get_request_successful(self):
+        """Test case to verify the behavior of the handle_get_request function."""
         form_instance = handle_get_request()
         self.assertIsInstance(form_instance, CustomUserCreationForm)
 
