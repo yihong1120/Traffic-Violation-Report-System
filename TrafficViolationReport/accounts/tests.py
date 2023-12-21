@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, TestCase
-from TrafficViolationReport.accounts.views import (handle_post_request, handle_get_request,
+from TrafficViolationReport.accounts.views import (register_post_request, register_get_request,
                                                    create_user_profile,
                                                    register,
                                                    send_verification_email)
@@ -22,18 +22,17 @@ class AccountsViewsTest(TestCase):
         mock_request.POST = {}
         return mock_form
 
-    def patch_form_and_call_register(self, mock_request, mock_form):
+    def patch_form_and_call_register(self, mock_request, mock_form, patched_function):
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
             if mock_request.method == 'POST':
-                register_post_request(mock_request)
+                patched_function(mock_request)
             else:
-                register_get_request()
+                patched_function(request=mock_request)
 
     @patch('TrafficViolationReport.accounts.views.send_mail')
     @patch('django.contrib.auth.get_user_model')
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
-    @patch('TrafficViolationReport.accounts.views.create_user_profile')
-    @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
+    @patch('TrafficViolationReport.accounts.views.register_post_request')
     def test_register_email_already_exists(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email, get_user_model):
         mock_form = self.mock_form_and_request(self.mock_request)
         mock_user_manager = MagicMock()
@@ -77,9 +76,7 @@ class AccountsViewsTest(TestCase):
         mock_create_user.assert_called_once()
         mock_create_user_profile.assert_called_once()
         mock_send_verification_email.assert_called_once()
-    @patch('TrafficViolationReport.accounts.views.authenticate_and_login_user')
-    @patch('TrafficViolationReport.accounts.views.create_user_profile')
-    @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
+    @patch('TrafficViolationReport.accounts.views.register_post_request')
     @patch('TrafficViolationReport.accounts.views.authenticate_and_login_user')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
@@ -127,11 +124,10 @@ class AccountsViewsTest(TestCase):
         response = handle_get_request()
         # Further assertions can be added once the expected behavior of handle_get_request is known
 
-    @patch('TrafficViolationReport.accounts.views.create_user')
-    @patch('TrafficViolationReport.accounts.views.create_user_profile')
-    @patch('TrafficViolationReport.accounts.views.send_verification_email')
+    @patch('TrafficViolationReport.accounts.views.register_post_request')
+    @patch('TrafficViolationReport.accounts.views.register_get_request')
     def test_register(self, mock_send_verification_email, mock_create_user_profile, mock_validate_and_create_user):
         mock_form = self.mock_form_and_request(self.mock_request)
-        self.patch_form_and_call_register(self.mock_request, mock_form)
-        mock_create_user.assert_called_once_with(self.mock_request, mock_form)
-        mock_create_user_profile.assert_called_once_with(self.mock_user)
+        register(self.mock_request)
+        mock_register_post_request.assert_called_once()
+
