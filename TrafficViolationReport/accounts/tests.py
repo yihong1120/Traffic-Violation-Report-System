@@ -195,6 +195,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
     def test_register(self, mock_send_verification_email, mock_create_user_profile, mock_validate_and_create_user):
+        """Test case to verify the behavior of the register function."""
         mock_form = self.mock_form_and_request(self.mock_request)
         self.patch_form_and_call_register(self.mock_request, mock_form)
         mock_create_user.assert_called_once_with(self.mock_request, mock_form)
