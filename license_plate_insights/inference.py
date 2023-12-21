@@ -60,6 +60,19 @@ class CarLicensePlateDetector:
         self.object_detector = object_detector
         self.ocr = ocr
 
+    def detect_license_plate(self, image: np.ndarray) -> Tuple[str, np.ndarray]:
+        """
+        Detects the license plate in an image and returns the recognized text and the region of interest.
+
+        Args:
+            image (np.ndarray): The image to analyze.
+
+        Returns:
+            Tuple[str, np.ndarray]: A tuple containing the recognized text and the region of interest.
+        """
+        recognized_text, roi = self.object_detector.recognize_license_plate(image)
+        return recognized_text, roi
+
     def recognize_license_plate(self, img_path: str) -> Tuple[str, np.ndarray]:
         """
         Recognizes the license plate in an image provided by the image path and returns the recognized text along with the annotated image.
@@ -70,11 +83,27 @@ class CarLicensePlateDetector:
         Returns:
             Tuple[str, np.ndarray]: A tuple containing the recognized text and the annotated image with a bounding box around the license plate.
         """
-        recognized_text, roi = self.object_detector.recognize_license_plate(img)
+        def annotate_image(self, recognized_text: str, roi: Tuple[int, int, int, int], image: np.ndarray) -> np.ndarray:
+            """
+            Annotates the image with the recognized text at the specified region of interest.
+
+            Args:
+                recognized_text (str): The text recognized from the license plate.
+                roi (Tuple[int, int, int, int]): The region of interest where the license plate is detected.
+                image (np.ndarray): The image to annotate.
+
+            Returns:
+                np.ndarray: The image with the annotation.
+            """
+            x1, y1, x2, y2 = roi
+            return self.image_processor.draw_text(image, recognized_text, (x1, y1 - 20))
+
+        image = self.load_image(img_path)
+        recognized_text, roi = self.detect_license_plate(image)
         if recognized_text:
+            annotated_image = self.annotate_image(recognized_text, roi, image)
             print(f"License: {recognized_text}")
-            img_with_text = self.image_processor.draw_text(img, recognized_text, (x1, y1 - 20))
-            return recognized_text, img_with_text
+            return recognized_text, annotated_image
         else:
             return "", img
         info = {
