@@ -10,35 +10,36 @@ class CarLicensePlateDetector:
         model (YOLO): An instance of the YOLO object detection model.
     """
 
-    def __init__(self, weights_path: str):
+    def __init__(self, image_processor, object_detector, ocr):
         """
-        Initializes the CarLicensePlateDetector with the given weights.
+        Initializes the CarLicensePlateDetector with injected dependencies.
 
         Args:
-            weights_path (str): The path to the weights file for the YOLO model.
+            image_processor (ImageProcessor): An instance of the image processing class.
+            object_detector (ObjectDetector): An instance of the object detection class.
+            ocr (OCR): An instance of the OCR class.
         """
-        self.image_processor = ImageProcessor()
-        self.object_detector = ObjectDetector(weights_path)
-        self.ocr = OCR()
+        self.image_processor = image_processor
+        self.object_detector = object_detector
+        self.ocr = ocr
 
-    def recognize_license_plate(self, img_path: str) -> np.ndarray:
+    def recognize_license_plate(self, img: np.ndarray) -> Tuple[str, np.ndarray]:
         """
         Recognizes the license plate in an image and draws a rectangle around it.
 
         Args:
-            img_path (str): The path to the image file containing the car.
+            img (np.ndarray): The image array containing the car.
 
         Returns:
-            np.ndarray: The image with the license plate region marked and annotated with the recognized text.
+            Tuple[str, np.ndarray]: The recognized text and the image with the license plate region marked.
         """
-        img = self.image_processor.load_image(img_path)
-        recognized_text, img = self.object_detector.recognize_license_plate(img_path)
+        recognized_text, roi = self.object_detector.recognize_license_plate(img)
         if recognized_text:
             print(f"License: {recognized_text}")
-            img = self.image_processor.draw_text(img, recognized_text, (x1, y1 - 20))
-
-        # Prepare info
-        image_info = self.get_image_info(img_path)
+            img_with_text = self.image_processor.draw_text(img, recognized_text, (x1, y1 - 20))
+            return recognized_text, img_with_text
+        else:
+            return "", img
         info = {
             'DateTime': image_info.get('DateTime', None),
             'GPSLatitude': image_info.get('GPSLatitude', None),
@@ -168,10 +169,10 @@ class CarLicensePlateDetector:
         Raises:
             Exception: If an error occurs while reading the file.
         """
-        if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-            return self.get_image_info(file_path)
-        elif file_path.lower().endswith(('.mp4', '.mov', '.avi')):
-            return self.get_video_info(file_path)
+        if file_extension.lower() in ('.png', '.jpg', '.jpeg'):
+            return self.get_image_info(content)
+        elif file_extension.lower() in ('.mp4', '.mov', '.avi'):
+            return self.get_video_info(content)
         else:
             return "Unsupported file format"
 

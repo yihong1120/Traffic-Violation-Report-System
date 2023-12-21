@@ -3,12 +3,14 @@ from google.cloud import vision
 
 
 class OCR:
-    @staticmethod
-    def extract_license_plate_text(roi: np.ndarray) -> str:
+    def __init__(self, vision_client=None):
+        self.vision_client = vision_client or vision.ImageAnnotatorClient()
+
+    def extract_license_plate_text(self, roi: np.ndarray) -> str:
         _, encoded_image = cv2.imencode('.jpg', roi)
         roi_bytes = encoded_image.tobytes()
 
-        client = vision.ImageAnnotatorClient()
+        client = self.vision_client
         image = vision.Image(content=roi_bytes)
 
         response = client.text_detection(image=image)
