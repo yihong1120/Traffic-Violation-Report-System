@@ -24,26 +24,32 @@ class AccountsViewsTest(TestCase):
 
     def patch_form_and_call_register(self, mock_request, mock_form):
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
-            register(mock_request)
+            if mock_request.method == 'POST':
+                register_post_request(mock_request)
+            else:
+                register_get_request()
 
     @patch('TrafficViolationReport.accounts.views.send_mail')
     @patch('django.contrib.auth.get_user_model')
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
-    @patch('TrafficViolationReport.accounts.views.create_user')
-    def test_register_email_already_exists(self, mock_create_user, mock_create_user_profile, mock_send_verification_email, get_user_model):
+    @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
+    def test_register_email_already_exists(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email, get_user_model):
         mock_form = self.mock_form_and_request(self.mock_request)
         mock_user_manager = MagicMock()
         mock_user_manager.filter.return_value.exists.return_value = True
         get_user_model.return_value.objects = mock_user_manager
-        self.patch_form_and_call_register(self.mock_request, mock_form)
+        if self.mock_request.method == 'POST':
+            self.patch_form_and_call_register(self.mock_request, mock_form)
+        else:
+            self.patch_form_and_call_register(self.mock_request, None)
         mock_create_user.assert_not_called()
         mock_create_user_profile.assert_not_called()
         mock_send_verification_email.assert_not_called()
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
-    @patch('TrafficViolationReport.accounts.views.create_user')
-    def test_register_user_already_exists(self, mock_create_user, mock_create_user_profile, mock_send_verification_email):
+    @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
+    def test_register_user_already_exists(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email):
         mock_form = self.mock_form_and_request(self.mock_request)
         self.mock_user.exists.return_value = True
         self.patch_form_and_call_register(self.mock_request, mock_form)
@@ -52,8 +58,8 @@ class AccountsViewsTest(TestCase):
         mock_send_verification_email.assert_not_called()
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
-    @patch('TrafficViolationReport.accounts.views.create_user')
-    def test_register_form_invalid(self, mock_create_user, mock_create_user_profile, mock_send_verification_email):
+    @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
+    def test_register_form_invalid(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email):
         mock_form = self.mock_form_and_request(self.mock_request)
         mock_form.is_valid.return_value = False
         self.patch_form_and_call_register(self.mock_request, mock_form)
@@ -62,8 +68,8 @@ class AccountsViewsTest(TestCase):
         mock_send_verification_email.assert_not_called()
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
-    @patch('TrafficViolationReport.accounts.views.create_user')
-    def test_register_success(self, mock_create_user, mock_create_user_profile, mock_send_verification_email):
+    @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
+    def test_register_success(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email):
         mock_form = self.mock_form_and_request(self.mock_request)
         self.patch_form_and_call_register(self.mock_request, mock_form)
         mock_create_user.assert_called_once()
@@ -90,7 +96,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
-    def test_register(self, mock_send_verification_email, mock_create_user_profile, mock_create_user):
+    def test_register(self, mock_send_verification_email, mock_create_user_profile, mock_validate_and_create_user):
         mock_form = self.mock_form_and_request(self.mock_request)
         self.patch_form_and_call_register(self.mock_request, mock_form)
         mock_create_user.assert_called_once_with(self.mock_request, mock_form)
