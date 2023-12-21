@@ -6,9 +6,21 @@ class ObjectDetector:
     def __init__(self, weights_path: str):
         self.model = YOLO(weights_path)
 
+
+class ObjectDetector:
+    def __init__(self, weights_path: str):
+        self.model = YOLO(weights_path)
+
     def recognize_license_plate(self, img_path: str) -> np.ndarray:
         img = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR)
         img = img[:, :, ::-1].copy()
+        results = self.model.predict(img, save=False)
+        boxes = results[0].boxes.xyxy
+        recognized_text = None
+
+    def recognize_license_plate(self, img_path: str):
+        img = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+        img = img[:, :, ::-1].copy()  # Convert BGR to RGB
         results = self.model.predict(img, save=False)
         boxes = results[0].boxes.xyxy
         recognized_text = None
