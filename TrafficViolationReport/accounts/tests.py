@@ -45,6 +45,10 @@ class AccountsViewsTest(TestCase):
         return mock_form
 
     def patch_form_and_call_register(self, mock_request, mock_form):
+        """Patch a form and call the register function for testing purposes.
+
+        Takes a mock_request and a mock_form as arguments.
+        """
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
             if mock_request.method == 'POST':
                 register_post_request(mock_request)
