@@ -9,11 +9,17 @@ from license_plate_insights.object_detection import ObjectDetector
 class TestObjectDetector(unittest.TestCase):
     @patch('ultralytics.YOLO', autospec=True)
     def setUp(self, mock_model):
+        """
+        Sets up the test case by creating an instance of ObjectDetector.
+        """
         self.model = mock_model.return_value
         self.detector = ObjectDetector(self.model)
 
     @patch('license_plate_insights.object_detection.ObjectDetector.recognize_license_plate')
     def test_recognize_license_plate(self, mock_recognize_license_plate):
+        """
+        Tests the recognize_license_plate method of the ObjectDetector class.
+        """
         mock_recognize_license_plate.return_value = 'ABC123', None
         recognized_text, _ = self.detector.recognize_license_plate('mock_image_path')
         self.assertEqual(recognized_text, 'ABC123')
