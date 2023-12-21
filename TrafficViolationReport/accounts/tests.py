@@ -13,7 +13,7 @@ class AccountsViewsTest(TestCase):
         mock_request = RequestFactory().post('/fake-path')
         valid_data = {'username': 'newuser', 'password1': 'complexpassword', 'password2': 'complexpassword'}
         mock_form = MagicMock(is_valid=MagicMock(return_value=True), cleaned_data=valid_data)
-        # Call the register_post_request function with the mocks
+        # Refactor to use the create_mock_form_and_request helper function
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
             response = register_post_request(mock_request)
         # Assertions to check expected behavior
@@ -28,7 +28,12 @@ class AccountsViewsTest(TestCase):
         self.mock_request = RequestFactory()
         self.mock_request.user = self.mock_user
 
-    def mock_form_and_request(self, mock_request):
+    def create_mock_form_and_request(self, method, is_form_valid):
+        mock_request = self.mock_request
+        mock_request.method = method
+        mock_form = MagicMock()
+        mock_form.is_valid.return_value = is_form_valid
+        return mock_form, mock_request
         mock_form = MagicMock()
         mock_form.is_valid = MagicMock(return_value=True)
         mock_request.method = 'POST'
@@ -48,7 +53,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
     def test_register_email_already_exists(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email, get_user_model):
-        mock_form = self.mock_form_and_request(self.mock_request)
+        mock_form, mock_request = self.create_mock_form_and_request('POST', True)
         mock_user_manager = MagicMock()
         mock_user_manager.filter.return_value.exists.return_value = True
         get_user_model.return_value.objects = mock_user_manager
@@ -58,7 +63,7 @@ class AccountsViewsTest(TestCase):
             self.patch_form_and_call_register(self.mock_request, None)
         mock_create_user.assert_not_called()
         mock_create_user_profile.assert_not_called()
-        mock_send_verification_email.assert_not_called()
+        self.assert_functions_not_called([mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email])
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
@@ -87,8 +92,7 @@ class AccountsViewsTest(TestCase):
     def test_register_success(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email):
         mock_form = self.mock_form_and_request(self.mock_request)
         self.patch_form_and_call_register(self.mock_request, mock_form)
-        mock_create_user.assert_called_once()
-        mock_create_user_profile.assert_called_once()
+        self.assert_functions_called_once([mock_validate_and_create_user, mock_create_user_profile])
 
     def test_register_post_request_invalid(self):
         # Mock an invalid POST request and valid form
@@ -103,6 +107,7 @@ class AccountsViewsTest(TestCase):
         # Mock a valid POST request and an invalid form
         mock_request = RequestFactory().post('/fake-path')
         mock_form = MagicMock(is_valid=MagicMock(return_value=False))
+        mock_form, mock_request = self.create_mock_form_and_request('POST', False)
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
             response = register(mock_request)
             self.assertFalse(mock_form.is_valid())
@@ -113,7 +118,7 @@ class AccountsViewsTest(TestCase):
         form_instance = register_get_request()
         # Assert it returns a CustomUserCreationForm instance
         self.assertIsInstance(form_instance, CustomUserCreationForm)
-        mock_send_verification_email.assert_called_once()
+        self.assert_functions_called_once([mock_send_verification_email])
     @patch('TrafficViolationReport.accounts.views.authenticate_and_login_user')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
@@ -127,6 +132,7 @@ class AccountsViewsTest(TestCase):
         mock_request.method = 'POST'
         mock_request.POST = {'invalid': 'data'}  # Include invalid form data
 
+        mock_form, mock_request = self.create_mock_form_and_request('POST', False)
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
             response = handle_post_request(mock_request)
 
@@ -144,9 +150,7 @@ class AccountsViewsTest(TestCase):
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
             response = handle_post_request(mock_request)
 
-        mock_validate_and_create_user.assert_called_once_with(mock_request, mock_form)
-        mock_create_user_profile.assert_called_once_with(mock_validate_and_create_user.return_value)
-        mock_authenticate_and_login_user.assert_called_once_with(mock_request, mock_validate_and_create_user.return_value, mock_form)
+        self.assert_functions_called_once([mock_validate_and_create_user, mock_create_user_profile, mock_authenticate_and_login_user])
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'accounts:verify')
         mock_form = MagicMock()
