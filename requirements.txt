@@ -8,3 +8,8 @@ google-cloud-bigquery==3.14.1
 googlemaps==4.10.0
 ultralytics==8.0.228
 celery==5.3.6
+opencv-python==4.8.1.78
+google.cloud==0.34.0
+google-cloud-vision==3.5.0
+exifread==3.0.0
+hachoir==3.3.0

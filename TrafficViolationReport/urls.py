@@ -21,10 +21,9 @@ urlpatterns = [
 
     path('reports/', include('reports.urls', namespace='reports')),
     path('accounts/', include('accounts.urls', namespace='accounts')),
-    # path('traffic_data/', include('traffic_data.urls', namespace='traffic_data')),
     path('', include('traffic_data.urls', namespace='traffic_data')),
-    
-    # 其他路徑...
+    path('license_plate_insights/', include('license_plate_insights.urls', namespace='license_plate_insights')),
+
 ]
 
 # 在開發環境中服務媒體文件
