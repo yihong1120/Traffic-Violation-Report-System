@@ -36,6 +36,14 @@ def authenticate_and_login_user(request, user, form):
         login(request, user)
 
 def register(request):
+    """
+    Handles user registration by processing the POST request with user data.
+
+    Parameters:
+        request: The HTTP request.
+
+    This function does not return anything.
+    """
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         user = validate_and_create_user(request, form)
