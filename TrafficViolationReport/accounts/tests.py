@@ -29,6 +29,10 @@ class AccountsViewsTest(TestCase):
         self.mock_request.user = self.mock_user
 
     def create_mock_form_and_request(self, method, is_form_valid):
+        """Mock a form and a request for testing purposes.
+
+        Takes a mock_request as an argument and returns a mock_form.
+        """
         mock_request = self.mock_request
         mock_request.method = method
         mock_form = MagicMock()
