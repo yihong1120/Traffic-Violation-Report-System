@@ -35,15 +35,15 @@ def authenticate_and_login_user(request, user, form):
     if user is not None:
         login(request, user)
 
-def handle_post_request(request):
+def register_post_request(request):
     """
-    Handles a POST request by processing the form data and creating a new user.
+    Processes a form submission (POST request) for user registration.
     
     Parameters:
-    - request: The HTTP request object.
-    
+        request: The HTTP request containing the registration form.
+
     Returns:
-    - A redirect response to the 'accounts:verify' URL.
+        A redirect to the account verification page after successful registration.
     """
     """
     Processes a POST request during user registration.
@@ -59,17 +59,21 @@ def handle_post_request(request):
     create_user_profile(user)
     authenticate_and_login_user(request, user, form)
     return redirect('accounts:verify')
-def handle_get_request():
+def register_get_request(request):
     """
-    Handles a GET request by returning a new instance of the CustomUserCreationForm.
+    Provides the registration form for a GET request.
+    
+    Parameters:
+        request: The HTTP request.
     
     Returns:
-    - A new instance of the CustomUserCreationForm.
+        The rendered registration form.
     """
+    form = handle_get_request()
     return CustomUserCreationForm()
 def register(request):
     """
-    Handles user registration by processing the POST request with user data.
+    Handles user registration by delegating to the appropriate function based on the method of the request.
 
     Parameters:
         request: The HTTP request.
@@ -77,7 +81,6 @@ def register(request):
     This function does not return anything.
     """
     if request.method == 'POST':
-        return handle_post_request(request)
-    else:
-        form = register_get_request()
-    return render(request, 'accounts/register.html', {'form': form})
+        return register_post_request(request)
+    else:  # GET request
+        return register_get_request(request)
