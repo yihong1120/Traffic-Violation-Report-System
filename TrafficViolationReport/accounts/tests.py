@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, TestCase
-from TrafficViolationReport.accounts.views import (create_user,
+from TrafficViolationReport.accounts.views import (handle_post_request, handle_get_request,
                                                    create_user_profile,
                                                    register,
                                                    send_verification_email)
@@ -75,6 +75,24 @@ class AccountsViewsTest(TestCase):
         mock_create_user.assert_called_once()
         mock_create_user_profile.assert_called_once()
         mock_send_verification_email.assert_called_once()
+    @patch('TrafficViolationReport.accounts.views.authenticate_and_login_user')
+    @patch('TrafficViolationReport.accounts.views.create_user_profile')
+    @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
+    def test_handle_post_request(self, mock_validate_and_create_user, mock_create_user_profile, mock_authenticate_and_login_user):
+        mock_request = RequestFactory().post('/fake-path')
+        mock_form = MagicMock()
+        with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
+            response = handle_post_request(mock_request)
+
+        mock_validate_and_create_user.assert_called_once_with(mock_request, mock_form)
+        mock_create_user_profile.assert_called_once_with(mock_validate_and_create_user.return_value)
+        mock_authenticate_and_login_user.assert_called_once_with(mock_request, mock_validate_and_create_user.return_value, mock_form)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, 'accounts:verify')
+    def test_handle_get_request(self):
+        response = handle_get_request()
+        # Further assertions can be added once the expected behavior of handle_get_request is known
+
     @patch('TrafficViolationReport.accounts.views.create_user')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
