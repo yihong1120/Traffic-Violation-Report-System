@@ -59,12 +59,12 @@ def handle_post_request(request):
     create_user_profile(user)
     authenticate_and_login_user(request, user, form)
     return redirect('accounts:verify')
-def register_get_request():
+def handle_get_request():
     """
-    Provides a registration form for a GET request.
-
+    Handles a GET request by returning a new instance of the CustomUserCreationForm.
+    
     Returns:
-        A CustomUserCreationForm instance for rendering.
+    - A new instance of the CustomUserCreationForm.
     """
     return CustomUserCreationForm()
 def register(request):
