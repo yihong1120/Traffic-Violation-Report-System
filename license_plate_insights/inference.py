@@ -1,4 +1,5 @@
-from license_plate_insights.image_processing import ImageProcessor
+from license_plate_insights.object_detection import ObjectDetector
+from license_plate_insights.ocr import OCR
 from license_plate_insights.object_detection import ObjectDetector
 from license_plate_insights.ocr import OCR
 
@@ -31,8 +32,23 @@ class CarLicensePlateDetector:
         Returns:
             np.ndarray: The image with the license plate region marked and annotated with the recognized text.
         """
-        img = self.image_processor.load_image(img_path)
-        recognized_text, img = self.object_detector.recognize_license_plate(img_path)
+        
+# New code using the ObjectDetector and OCR class methods
+        # Load the image
+        img = self.object_detector.read_image(img_path)
+        # Detect objects and get bounding boxes
+        boxes = self.object_detector.model.predict(img, save=False)[0].boxes.xyxy
+
+        # Iterate over detected boxes to find license plate and perform OCR
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box[:4])
+            roi = img[y1:y2, x1:x2]
+            recognized_text = self.ocr.extract_license_plate_text(roi)
+            if recognized_text:  # We assume the first recognized text is the license plate
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                break  # Break after finding the first license plate
+
+        # Proceed if a license plate was recognized
         if recognized_text:
             print(f"License: {recognized_text}")
             img = self.image_processor.draw_text(img, recognized_text, (x1, y1 - 20))
