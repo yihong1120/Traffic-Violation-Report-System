@@ -2,6 +2,9 @@ import cv2
 from google.cloud import vision
 
 
+# OCR class containing OCR logic
+
+
 class OCR:
     @staticmethod
     def extract_license_plate_text(roi: np.ndarray) -> str:
