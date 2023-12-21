@@ -1,17 +1,6 @@
-import os
-import cv2
-import numpy as np
-from PIL import Image, ImageDraw
-from ultralytics import YOLO
-import matplotlib.pyplot as plt
-from typing import List, Tuple, Union, Dict, Any
-from google.cloud import vision
-from PIL.ExifTags import TAGS
-import exifread
-from hachoir.parser import createParser
-from hachoir.metadata import extractMetadata
-from fractions import Fraction
-
+from license_plate_insights.image_processing import ImageProcessor
+from license_plate_insights.object_detection import ObjectDetector
+from license_plate_insights.ocr import OCR
 
 class CarLicensePlateDetector:
     """
@@ -28,7 +17,9 @@ class CarLicensePlateDetector:
         Args:
             weights_path (str): The path to the weights file for the YOLO model.
         """
-        self.model = YOLO(weights_path)
+        self.image_processor = ImageProcessor()
+        self.object_detector = ObjectDetector(weights_path)
+        self.ocr = OCR()
 
     def recognize_license_plate(self, img_path: str) -> np.ndarray:
         """
@@ -40,29 +31,11 @@ class CarLicensePlateDetector:
         Returns:
             np.ndarray: The image with the license plate region marked and annotated with the recognized text.
         """
-        img = self.load_image(img_path)
-        results = self.model.predict(img, save=False)
-        boxes = results[0].boxes.xyxy
-        recognized_text = None
-
-        for box in boxes:
-            x1, y1, x2, y2 = map(int, box[:4])
-
-            # Extract license plate text from the ROI
-            roi = img[y1:y2, x1:x2]
-            license_plate = self.extract_license_plate_text(roi)
-
-            # If license plate text is not empty, update recognized_text
-            if license_plate:
-                recognized_text = license_plate
-
-            # Draw a rectangle around the license plate
-            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-        # Print recognized text if available
+        img = self.image_processor.load_image(img_path)
+        recognized_text, img = self.object_detector.recognize_license_plate(img_path)
         if recognized_text:
             print(f"License: {recognized_text}")
-            img = self.draw_text(img, recognized_text, (x1, y1 - 20))
+            img = self.image_processor.draw_text(img, recognized_text, (x1, y1 - 20))
 
         # Prepare info
         image_info = self.get_image_info(img_path)
@@ -74,17 +47,6 @@ class CarLicensePlateDetector:
         }
 
         return info, img
-
-    @staticmethod
-    def draw_text(img: np.ndarray, text: str, xy: Tuple[int, int], color: Tuple[int, int, int] = (0, 255, 0)) -> np.ndarray:
-        """
-        Draws text on an image at a specified location.
-
-        Args:
-            img (np.ndarray): The image on which to draw text.
-            text (str): The text to draw.
-            xy (Tuple[int, int]): The (x, y) position where the text will be drawn on the image.
-            color (Tuple[int, int, int], optional): The color for the text. Defaults to green.
 
         Returns:
             np.ndarray: The image with the text drawn on it.
