@@ -4,10 +4,21 @@ from license_plate_insights.ocr import OCR
 
 class CarLicensePlateDetector:
     """
-    A class to detect and recognize license plates on cars using the YOLO model and OCR.
+    This class is used for detecting and recognizing car license plates.
+
+    It leverages a trained YOLO (You Only Look Once) model for object detection,
+    and an OCR (Optical Character Recognition) system to recognize and decode
+    the characters on the license plates. The processing of images and videos to
+    identify and annotate license plates is encapsulated within this class.
 
     Attributes:
-        model (YOLO): An instance of the YOLO object detection model.
+        weights_path (str): The path to the weights file for the YOLO model.
+
+    Methods:
+        recognize_license_plate(img: np.ndarray) -> Tuple[str, np.ndarray]:
+            Recognizes the license plate in a given image and returns the
+            recognized text alongside an annotated image with a bounding box around
+            the license plate.
     """
 
     def __init__(self, image_processor, object_detector, ocr):
@@ -23,15 +34,15 @@ class CarLicensePlateDetector:
         self.object_detector = object_detector
         self.ocr = ocr
 
-    def recognize_license_plate(self, img: np.ndarray) -> Tuple[str, np.ndarray]:
+    def recognize_license_plate(self, img_path: str) -> np.ndarray:
         """
-        Recognizes the license plate in an image and draws a rectangle around it.
+        Recognizes the license plate in a given image and returns the annotated image.
 
         Args:
-            img (np.ndarray): The image array containing the car.
+            img_path (str): The path to the input image.
 
         Returns:
-            Tuple[str, np.ndarray]: The recognized text and the image with the license plate region marked.
+            np.ndarray: The image with the license plate region marked and annotated with the recognized text.
         """
         recognized_text, roi = self.object_detector.recognize_license_plate(img)
         if recognized_text:
