@@ -183,6 +183,22 @@ class AccountsViewsTest(TestCase):
         # Code to track any state changes would go here
 
     def test_handle_get_request_with_parameters(self):
+        """
+        Test how handle_get_request behaves with different parameter values.
+
+        This test verifies the behavior of the handle_get_request function when provided with
+        different parameters. It includes an example of a valid parameter test case where the expected
+        type of response is checked, as well as an invalid parameter test case which is expected to
+        raise an exception.
+
+        Example of a valid parameter test case:
+        response = handle_get_request(parameter='valid_value')
+        self.assertIsInstance(response, ExpectedResponseType)
+
+        Example of an invalid parameter test case:
+        with self.assertRaises(SomeException):
+            handle_get_request(parameter='invalid_value')
+        """
         # Test how handle_get_request behaves with different parameter values
         # Example test case for a valid parameter
         # response = handle_get_request(parameter=value)
