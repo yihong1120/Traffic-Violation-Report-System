@@ -9,10 +9,16 @@ from license_plate_insights.ocr import OCR
 
 class TestOCR(unittest.TestCase):
     def setUp(self):
+        """
+        Sets up the test case by creating an instance of OCR.
+        """
         self.ocr = OCR()
 
     @patch('google.cloud.vision.ImageAnnotatorClient')
     def test_extract_license_plate_text(self, mock_client):
+        """
+        Tests the extract_license_plate_text method of the OCR class.
+        """
         mock_client.return_value.text_detection.return_value.text_annotations = [{'description': 'ABC123'}]
         recognized_text = self.ocr.extract_license_plate_text('mock_roi')
         self.assertEqual(recognized_text, 'ABC123')

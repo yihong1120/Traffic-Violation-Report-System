@@ -4,10 +4,25 @@ from ultralytics import YOLO
 
 class ObjectDetector:
     def __init__(self, model):
+        """
+        Initializes the ObjectDetector with a given model.
+
+        Args:
+            model: The YOLO model to use for object detection.
+        """
         # Allows injection of a YOLO model for better testability
         self.model = model
 
     def recognize_license_plate(self, img_path: str) -> np.ndarray:
+        """
+        Recognizes the license plate in a given image and returns the recognized text and the image.
+
+        Args:
+            img_path: A string representing the path to the image file.
+
+        Returns:
+            A tuple containing the recognized text and the numpy array representing the image.
+        """
         img = self.read_image(img_path)
         results = self.model.predict(img, save=False)
         boxes = results[0].boxes.xyxy
@@ -38,6 +53,16 @@ class ObjectDetector:
         return vision.ImageAnnotatorClient()
 
     def process_detected_box(self, box, img):
+        """
+        Processes a detected box in an image, extracts the text from the box using Google Cloud Vision API, and draws a rectangle around the box in the image.
+
+        Args:
+            box: The coordinates of the detected box in the image.
+            img: The numpy array representing the image.
+
+        Returns:
+            A tuple containing the recognized text and the modified image with the box drawn.
+        """
         x1, y1, x2, y2 = map(int, box[:4])
         roi = img[y1:y2, x1:x2]
             _, encoded_image = cv2.imencode('.jpg', roi)
