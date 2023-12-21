@@ -35,6 +35,14 @@ def authenticate_and_login_user(request, user, form):
     if user is not None:
         login(request, user)
 
+def handle_post_request(request):
+    form = CustomUserCreationForm(request.POST)
+    user = validate_and_create_user(request, form)
+    create_user_profile(user)
+    authenticate_and_login_user(request, user, form)
+    return redirect('accounts:verify')
+def handle_get_request():
+    return CustomUserCreationForm()
 def register(request):
     """
     Handles user registration by processing the POST request with user data.
@@ -45,11 +53,7 @@ def register(request):
     This function does not return anything.
     """
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        user = validate_and_create_user(request, form)
-        create_user_profile(user)
-        authenticate_and_login_user(request, user, form)
-        return redirect('accounts:verify')
+        return handle_post_request(request)
     else:
-        form = CustomUserCreationForm()
+        form = handle_get_request()
     return render(request, 'accounts/register.html', {'form': form})
