@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'accounts',
     'utils',
     'traffic_data',
+    'license_plate_insights',
     'django.contrib.sites',
     'allauth',
     'allauth.account',

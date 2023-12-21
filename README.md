@@ -5,11 +5,11 @@ A platform for users to upload and share the responses from law enforcement agen
 - [ ] Utilise Python's Django to design functionalities for:
     - [x] uploading,
     - [x] displaying,
-    - [ ] user management,
+    - [x] user management,
     - [ ] login recaptcha,
-    - [ ] registration with Gmail validation,
+    - [x] registration with Gmail validation,
 - [ ] Log in with Google, Facebook, Twitter, Github account.
-- [ ] Attach the Llama2 model to the customer response bot.
+- [ ] Attach the Llama2 model or Gemini to the customer response bot.
 - [x] Integrate the [YOLOv8-License-Plate-Insights](https://github.com/yihong1120/YOLOv8-License-Plate-Insights) model to implement license plate recognition.
 - [x] Use OCR techniques to automatically generate the parameters of traffic violations.
 - [x] Design a SQL and BigQuery database on the cloud to store the information of violation, such as license plate, location, organiser(option), media, time.
