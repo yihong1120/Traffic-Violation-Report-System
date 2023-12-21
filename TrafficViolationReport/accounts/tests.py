@@ -61,6 +61,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
     def test_register_email_already_exists(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email, get_user_model):
+        """Test case to verify register function behavior when the email already exists."""
         mock_form, mock_request = self.create_mock_form_and_request('POST', True)
         mock_user_manager = MagicMock()
         mock_user_manager.filter.return_value.exists.return_value = True
