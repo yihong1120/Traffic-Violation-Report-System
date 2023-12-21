@@ -163,22 +163,20 @@ class AccountsViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'accounts:verify')
     def test_handle_get_request_successful(self):
-        # Test a successful GET request returning CustomUserCreationForm instance
         form_instance = handle_get_request()
         self.assertIsInstance(form_instance, CustomUserCreationForm)
 
     def test_handle_get_request_with_side_effects(self):
-        # Test if there are any side effects of the GET request handling
-        # Code to track any state changes would go here
+        pre_state = self.mock_user.__dict__.copy()
+        handle_get_request()
+        post_state = self.mock_user.__dict__.copy()
+        self.assertEqual(pre_state, post_state)
 
     def test_handle_get_request_with_parameters(self):
-        # Test how handle_get_request behaves with different parameter values
-        # Example test case for a valid parameter
-        # response = handle_get_request(parameter=value)
-        # self.assertIsInstance(response, ExpectedType)
-        # Example test case for an invalid parameter
-        # with self.assertRaises(ExpectedException):
-        #     handle_get_request(parameter=invalid_value)
+        response = handle_get_request()
+        self.assertIsInstance(response, CustomUserCreationForm)
+        with self.assertRaises(TypeError):
+            handle_get_request(unexpected_param='some_value')
 
     @patch('TrafficViolationReport.accounts.views.create_user')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
