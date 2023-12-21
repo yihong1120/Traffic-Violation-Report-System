@@ -36,6 +36,15 @@ def authenticate_and_login_user(request, user, form):
         login(request, user)
 
 def register_post_request(request):
+    '''
+    Handle a POST request and perform necessary actions such as validating and creating a user, creating a user profile, and authenticating and logging in the user.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        The HTTP response object redirecting to the 'accounts:verify' page.
+    '''
     """
     Processes a POST request during user registration.
 
@@ -51,6 +60,12 @@ def register_post_request(request):
     authenticate_and_login_user(request, user, form)
     return redirect('accounts:verify')
 def register_get_request():
+    '''
+    Handle a GET request and perform necessary actions.
+
+    Returns:
+        The HTTP response object.
+    '''
     """
     Provides a registration form for a GET request.
 
