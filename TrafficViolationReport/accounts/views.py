@@ -35,7 +35,16 @@ def authenticate_and_login_user(request, user, form):
     if user is not None:
         login(request, user)
 
-def register_post_request(request):
+def handle_post_request(request):
+    """
+    Handles a POST request by processing the form data and creating a new user.
+    
+    Parameters:
+    - request: The HTTP request object.
+    
+    Returns:
+    - A redirect response to the 'accounts:verify' URL.
+    """
     """
     Processes a POST request during user registration.
 
@@ -50,12 +59,12 @@ def register_post_request(request):
     create_user_profile(user)
     authenticate_and_login_user(request, user, form)
     return redirect('accounts:verify')
-def register_get_request():
+def handle_get_request():
     """
-    Provides a registration form for a GET request.
-
+    Handles a GET request by returning a new instance of the CustomUserCreationForm.
+    
     Returns:
-        A CustomUserCreationForm instance for rendering.
+    - A new instance of the CustomUserCreationForm.
     """
     return CustomUserCreationForm()
 def register(request):
@@ -68,7 +77,7 @@ def register(request):
     This function does not return anything.
     """
     if request.method == 'POST':
-        return register_post_request(request)
+        return handle_post_request(request)
     else:
         form = register_get_request()
     return render(request, 'accounts/register.html', {'form': form})
