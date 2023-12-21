@@ -60,15 +60,15 @@ class CarLicensePlateDetector:
         self.object_detector = object_detector
         self.ocr = ocr
 
-    def recognize_license_plate(self, img_path: str) -> np.ndarray:
+    def recognize_license_plate(self, img_path: str) -> Tuple[str, np.ndarray]:
         """
-        Recognizes the license plate in a given image and returns the annotated image.
+        Recognizes the license plate in an image provided by the image path and returns the recognized text along with the annotated image.
 
         Args:
-            img_path (str): The path to the input image.
+            img_path (str): The path to the input image file.
 
         Returns:
-            np.ndarray: The image with the license plate region marked and annotated with the recognized text.
+            Tuple[str, np.ndarray]: A tuple containing the recognized text and the annotated image with a bounding box around the license plate.
         """
         recognized_text, roi = self.object_detector.recognize_license_plate(img)
         if recognized_text:
