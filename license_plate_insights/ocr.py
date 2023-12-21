@@ -4,9 +4,24 @@ from google.cloud import vision
 
 class OCR:
     def __init__(self, vision_client=None):
+        """
+        Initializes the OCR with a given vision client.
+
+        Args:
+            vision_client: A vision client from Google Cloud Vision API.
+        """
         self.vision_client = vision_client or vision.ImageAnnotatorClient()
 
     def extract_license_plate_text(self, roi: np.ndarray) -> str:
+        """
+        Extracts the text from a region of interest (ROI) in an image using Google Cloud Vision API and returns the recognized text.
+
+        Args:
+            roi: A numpy array representing the region of interest in the image.
+
+        Returns:
+            The recognized text as a string.
+        """
         _, encoded_image = cv2.imencode('.jpg', roi)
         roi_bytes = encoded_image.tobytes()
 
