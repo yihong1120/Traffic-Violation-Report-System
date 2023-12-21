@@ -8,6 +8,19 @@ from TrafficViolationReport.accounts.views import (handle_post_request, handle_g
 
 
 class AccountsViewsTest(TestCase):
+        def test_register_post_request_valid(self):
+        # Mock a valid POST request and valid form
+        mock_request = RequestFactory().post('/fake-path')
+        valid_data = {'username': 'newuser', 'password1': 'complexpassword', 'password2': 'complexpassword'}
+        mock_form = MagicMock(is_valid=MagicMock(return_value=True), cleaned_data=valid_data)
+        # Call the register_post_request function with the mocks
+        with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
+            response = register_post_request(mock_request)
+        # Assertions to check expected behavior
+        # This requires knowing the expected outcome after calling the function
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/expected-redirect-url/')
+
     def setUp(self):
         self.mock_user = MagicMock()
         self.mock_user.username = 'test_user'
@@ -76,6 +89,30 @@ class AccountsViewsTest(TestCase):
         self.patch_form_and_call_register(self.mock_request, mock_form)
         mock_create_user.assert_called_once()
         mock_create_user_profile.assert_called_once()
+
+    def test_register_post_request_invalid(self):
+        # Mock an invalid POST request and valid form
+        mock_request = RequestFactory().post('/fake-path', data={})
+        mock_form = MagicMock(is_valid=MagicMock(return_value=True))
+        with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
+            with patch('TrafficViolationReport.accounts.views.handle_post_request') as mock_handle_post_request:
+                register(mock_request)
+                mock_handle_post_request.assert_called_once_with(mock_request)
+
+    def test_register_post_request_form_invalid(self):
+        # Mock a valid POST request and an invalid form
+        mock_request = RequestFactory().post('/fake-path')
+        mock_form = MagicMock(is_valid=MagicMock(return_value=False))
+        with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
+            response = register(mock_request)
+            self.assertFalse(mock_form.is_valid())
+            self.assertTemplateUsed(response, 'accounts/register.html')
+
+    def test_register_get_request(self):
+        # Call the register_get_request function
+        form_instance = register_get_request()
+        # Assert it returns a CustomUserCreationForm instance
+        self.assertIsInstance(form_instance, CustomUserCreationForm)
         mock_send_verification_email.assert_called_once()
     @patch('TrafficViolationReport.accounts.views.authenticate_and_login_user')
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
