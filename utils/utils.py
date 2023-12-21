@@ -62,8 +62,7 @@ def get_latitude_and_longitude(address: str) -> Tuple[Optional[float], Optional[
 
     # Extract the location from the geocoding result.
     location = geocode_result[0]['geometry']['location']
-    # Return the longitude and latitude.
-    return location['lng'], location['lat']
+    return location['lat'], location['lng']
 
 def coordinates_to_address(lat, lng):
     """
@@ -127,7 +126,6 @@ def process_input(input_string: str) -> str:
         # If the input string could not be geocoded, return it unchanged.
         lat, lng = extract_lat_long(input_string)
         address = coordinates_to_address(lat, lng)
-        # f"{lng},{lat}" to address
         # return address, f"{lng},{lat}", #user_input is coords
         return address, lat, lng, "coords"
 
@@ -184,6 +182,9 @@ class ReportManager:
         Returns:
             A dictionary with initial data for the form.
         """
+        location = (selected_record.address if selected_record.user_input_type == "address"
+                    else f"{selected_record.latitude}, {selected_record.longtitude}")
+
         return {
             'license_plate': selected_record.license_plate,
             'date': selected_record.date,
@@ -191,9 +192,7 @@ class ReportManager:
             'minute': selected_record.time.minute,
             'violation': selected_record.violation,
             'status': selected_record.status,
-            #location
-            'address': selected_record.address, # user input is address
-            'coords': f"{selected_record.latitude}, {selected_record.longitude}",# user input is coords
+            'location': location, 
             'officer': selected_record.officer.username if selected_record.officer else ""
         }
 

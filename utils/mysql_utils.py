@@ -162,6 +162,9 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: st
         violation = TrafficViolation.objects.get(traffic_violation_id=traffic_violation_id)
         media_files = list(MediaFile.objects.filter(traffic_violation=violation).values_list('file', flat=True))
 
+        location = (violation.address if violation.user_input_type == "address"
+            else f"{violation.latitude}, {violation.longtitude}")
+
         lat, lng = violation.latitude, violation.longtitude
         data = {
             'lat': lat,
@@ -172,6 +175,7 @@ def get_traffic_violation_details(request: HttpRequest, traffic_violation_id: st
             'date': violation.date,
             'time': violation.time.strftime('%H:%M'),
             'violation': violation.violation,
+            'location': location,
             'status': violation.status,
             'officer': violation.officer.username if violation.officer else 'None'
         }
