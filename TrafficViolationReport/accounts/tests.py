@@ -163,6 +163,11 @@ class AccountsViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'accounts:verify')
     def test_handle_get_request_successful(self):
+        """
+        Test the handle_get_request() function from the accounts views module.
+
+        This test verifies if a successful GET request returns an instance of CustomUserCreationForm.
+        """
         # Test a successful GET request returning CustomUserCreationForm instance
         form_instance = handle_get_request()
         self.assertIsInstance(form_instance, CustomUserCreationForm)
