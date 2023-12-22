@@ -29,6 +29,10 @@ class AccountsViewsTest(TestCase):
         self.mock_request.user = self.mock_user
 
     def create_mock_form_and_request(self, method, is_form_valid):
+        """Mock a form and a request for testing purposes.
+
+        Takes a mock_request as an argument and returns a mock_form.
+        """
         mock_request = self.mock_request
         mock_request.method = method
         mock_form = MagicMock()
@@ -41,6 +45,10 @@ class AccountsViewsTest(TestCase):
         return mock_form
 
     def patch_form_and_call_register(self, mock_request, mock_form):
+        """Patch a form and call the register function for testing purposes.
+
+        Takes a mock_request and a mock_form as arguments.
+        """
         with patch('TrafficViolationReport.accounts.views.CustomUserCreationForm', return_value=mock_form):
             if mock_request.method == 'POST':
                 register_post_request(mock_request)
@@ -53,6 +61,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
     def test_register_email_already_exists(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email, get_user_model):
+        """Test case to verify register function behavior when the email already exists."""
         mock_form, mock_request = self.create_mock_form_and_request('POST', True)
         mock_user_manager = MagicMock()
         mock_user_manager.filter.return_value.exists.return_value = True
@@ -68,6 +77,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
     def test_register_user_already_exists(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email):
+        """Test case to verify the behavior of the register function when the user already exists."""
         mock_form = self.mock_form_and_request(self.mock_request)
         self.mock_user.exists.return_value = True
         self.patch_form_and_call_register(self.mock_request, mock_form)
@@ -78,6 +88,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
     def test_register_form_invalid(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email):
+        """Test case to verify the behavior of the register function when the form is invalid."""
         mock_form = self.mock_form_and_request(self.mock_request)
         mock_form.is_valid.return_value = False
         self.patch_form_and_call_register(self.mock_request, mock_form)
@@ -90,6 +101,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.validate_and_create_user')
     def test_register_success(self, mock_validate_and_create_user, mock_create_user_profile, mock_send_verification_email):
+        """Test case to verify the behavior of the register function when the registration is successful."""
         mock_form = self.mock_form_and_request(self.mock_request)
         self.patch_form_and_call_register(self.mock_request, mock_form)
         self.assert_functions_called_once([mock_validate_and_create_user, mock_create_user_profile])
@@ -163,6 +175,7 @@ class AccountsViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'accounts:verify')
     def test_handle_get_request_successful(self):
+        """Test case to verify the behavior of the handle_get_request function."""
         form_instance = handle_get_request()
         self.assertIsInstance(form_instance, CustomUserCreationForm)
 
@@ -182,6 +195,7 @@ class AccountsViewsTest(TestCase):
     @patch('TrafficViolationReport.accounts.views.create_user_profile')
     @patch('TrafficViolationReport.accounts.views.send_verification_email')
     def test_register(self, mock_send_verification_email, mock_create_user_profile, mock_validate_and_create_user):
+        """Test case to verify the behavior of the register function."""
         mock_form = self.mock_form_and_request(self.mock_request)
         self.patch_form_and_call_register(self.mock_request, mock_form)
         mock_create_user.assert_called_once_with(self.mock_request, mock_form)
