@@ -222,6 +222,10 @@ if __name__ == '__main__':
 
     # Test case for parse_gps_info method
     def test_parse_gps_info(self):
+        """
+        Test the parse_gps_info method of the CarLicensePlateDetector class to ensure it
+        correctly parses the GPS information from the metadata.
+        """
         mock_gps_info = {
             'GPS GPSLatitude': '25 deg 1\' 58.80" N',
             'GPS GPSLatitudeRef': 'N',
