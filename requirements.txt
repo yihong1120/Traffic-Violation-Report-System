@@ -13,3 +13,4 @@ google.cloud==0.34.0
 google-cloud-vision==3.5.0
 exifread==3.0.0
 hachoir==3.3.0
+google-generativeai==0.3.2
