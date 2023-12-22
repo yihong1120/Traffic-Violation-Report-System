@@ -21,8 +21,8 @@ class TestCarLicensePlateDetector(unittest.TestCase):
         self.detector = CarLicensePlateDetector(self.image_processor, self.object_detector, self.ocr)
 
 
-    @patch('license_plate_insights.inference.ImageProcessor.draw_text')
-    @patch('license_plate_insights.object_detection.ObjectDetector.recognize_license_plate')
+    @patch('license_plate_insights.inference.CarLicensePlateDetector.annotate_image')
+    @patch('license_plate_insights.inference.CarLicensePlateDetector.detect_license_plate')
     def test_recognize_license_plate(self, mock_recognize_license_plate_object, mock_draw_text):
         # Create a mock image
         mock_image = np.zeros((640, 480, 3), dtype=np.uint8)
@@ -46,7 +46,7 @@ class TestCarLicensePlateDetector(unittest.TestCase):
             with self.subTest(scenario=scenario):
                 mock_recognize_license_plate_object.return_value = scenario['recognize_output']
                 mock_draw_text.return_value = scenario['draw_output']
-                result = self.detector.recognize_license_plate(mock_image)
+                result = self.detector.recognize_license_plate('mock_image_path')
                 self.assertEqual(result, scenario['expected_result'])
 
     @patch('license_plate_insights.inference.CarLicensePlateDetector.draw_text')
@@ -96,7 +96,35 @@ class TestCarLicensePlateDetector(unittest.TestCase):
         self.detector.process_video(mock_video_path, mock_output_path)
         mock_process_video.assert_called_once_with(mock_video_path, mock_output_path)
 
-    # Test cases for additional methods will be added here
+    def test_detect_license_plate(self):
+        with patch('license_plate_insights.object_detection.ObjectDetector.recognize_license_plate') as mock_recognize_license_plate:
+            # Setup mocks
+            mock_image = np.zeros((640, 480, 3), dtype=np.uint8)
+            expected_output = ('ABC123', np.array([50, 50, 200, 200]))
+            mock_recognize_license_plate.return_value = expected_output
+
+            # Call the function
+            recognized_text, roi = self.detector.detect_license_plate(mock_image)
+
+            # Assertions
+            mock_recognize_license_plate.assert_called_once_with(mock_image)
+            self.assertEqual(recognized_text, expected_output[0])
+            np.testing.assert_array_equal(roi, expected_output[1])
+
+    def test_annotate_image(self):
+        with patch('license_plate_insights.inference.ImageProcessor.draw_text') as mock_draw_text, \
+             patch('license_plate_insights.inference.CarLicensePlateDetector.load_image', return_value='mock_image'):
+            # Setup mocks
+            recognized_text = 'test_plate'
+            roi = (50, 50, 200, 200)
+            mock_draw_text.return_value = 'mock_annotated_image'
+
+            # Call the function
+            annotated_image = self.detector.annotate_image(recognized_text, roi, 'mock_image')
+
+            # Assertions
+            mock_draw_text.assert_called_once_with('mock_image', recognized_text, (roi[0], roi[1] - 20))
+            self.assertEqual(annotated_image, 'mock_annotated_image')
 
 if __name__ == '__main__':
     unittest.main()
