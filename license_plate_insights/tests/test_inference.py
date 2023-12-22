@@ -134,6 +134,10 @@ if __name__ == '__main__':
     @patch('matplotlib.pyplot.imshow')
     @patch('matplotlib.pyplot.savefig')
     def test_display_and_save(self, mock_savefig, mock_imshow, mock_axis, mock_subplot):
+        """
+        Test the display_and_save method of CarLicensePlateDetector class to ensure images
+        are correctly displayed and saved as specified.
+        """
         mock_imgs = [np.random.rand(100, 100, 3) * 255 for _ in range(3)]
         mock_imgs = [img.astype(np.uint8) for img in mock_imgs]
         mock_save_path = 'mock_save_path.jpg'
@@ -144,6 +148,10 @@ if __name__ == '__main__':
     @patch('license_plate_insights.inference.CarLicensePlateDetector.get_image_info')
     @patch('license_plate_insights.inference.CarLicensePlateDetector.get_video_info')
     def test_get_media_info(self, mock_get_video_info, mock_get_image_info):
+        """
+        Test the get_media_info method of the CarLicensePlateDetector class to check if it
+        correctly returns the media information based on the file extension.
+        """
         mock_file_path = 'mock_file_path'
         test_scenarios = [
             {
@@ -178,6 +186,10 @@ if __name__ == '__main__':
     @patch('PIL.Image.open')
     @patch('license_plate_insights.inference.CarLicensePlateDetector.extract_gps_data')
     def test_get_image_info(self, mock_extract_gps_data, mock_open):
+        """
+        Test the get_image_info method of the CarLicensePlateDetector class to ensure it
+        correctly returns the image information including metadata and GPS data.
+        """
         mock_file_path = 'mock_file_path.jpg'
         mock_datetime = '2022:01:01 00:00:00'
         mock_gps_info = {'GPSLatitude': 25.0330, 'GPSLongitude': 121.5654}
@@ -192,6 +204,10 @@ if __name__ == '__main__':
     # Test case for extract_gps_data method
     @patch('exifread.process_file')
     def test_extract_gps_data(self, mock_process_file):
+        """
+        Test the extract_gps_data method of the CarLicensePlateDetector class to ensure it
+        correctly extracts the GPS data from an image.
+        """
         mock_file_path = 'mock_file_path.jpg'
         mock_tags = {
             'GPS GPSLatitude': '25 deg 1\' 58.80" N',
@@ -206,6 +222,10 @@ if __name__ == '__main__':
 
     # Test case for parse_gps_info method
     def test_parse_gps_info(self):
+        """
+        Test the parse_gps_info method of the CarLicensePlateDetector class to ensure it
+        correctly parses the GPS information from the metadata.
+        """
         mock_gps_info = {
             'GPS GPSLatitude': '25 deg 1\' 58.80" N',
             'GPS GPSLatitudeRef': 'N',
@@ -218,6 +238,11 @@ if __name__ == '__main__':
 
     # Test case for convert_to_degrees method
     def test_convert_to_degrees(self):
+        """
+        Test the convert_to_degrees method of the CarLicensePlateDetector class to ensure
+        it correctly converts GPS coordinates expressed as (degrees, minutes, seconds) tuples
+        into decimal degrees.
+        """
         mock_value = (25, 1, 58.8)
         degrees = self.detector.convert_to_degrees(mock_value)
         expected_degrees = 25.0330
@@ -227,6 +252,10 @@ if __name__ == '__main__':
     @patch('hachoir.parser.createParser')
     @patch('hachoir.metadata.extractMetadata')
     def test_get_video_info(self, mock_extract_metadata, mock_create_parser):
+        """
+        Test the get_video_info method of the CarLicensePlateDetector class to ensure
+        it correctly returns the video information.
+        """
         mock_file_path = 'mock_file_path.mp4'
         mock_metadata = Mock()
         mock_metadata.exportDictionary.return_value = 'mock_video_info'
