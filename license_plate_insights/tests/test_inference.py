@@ -148,6 +148,10 @@ if __name__ == '__main__':
     @patch('license_plate_insights.inference.CarLicensePlateDetector.get_image_info')
     @patch('license_plate_insights.inference.CarLicensePlateDetector.get_video_info')
     def test_get_media_info(self, mock_get_video_info, mock_get_image_info):
+        """
+        Test the get_media_info method of the CarLicensePlateDetector class to check if it
+        correctly returns the media information based on the file extension.
+        """
         mock_file_path = 'mock_file_path'
         test_scenarios = [
             {
