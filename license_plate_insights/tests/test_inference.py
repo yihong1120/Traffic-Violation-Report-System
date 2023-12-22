@@ -238,6 +238,11 @@ if __name__ == '__main__':
 
     # Test case for convert_to_degrees method
     def test_convert_to_degrees(self):
+        """
+        Test the convert_to_degrees method of the CarLicensePlateDetector class to ensure
+        it correctly converts GPS coordinates expressed as (degrees, minutes, seconds) tuples
+        into decimal degrees.
+        """
         mock_value = (25, 1, 58.8)
         degrees = self.detector.convert_to_degrees(mock_value)
         expected_degrees = 25.0330
