@@ -1,111 +1,71 @@
-    """
-    The CarLicensePlateDetector class is responsible for detecting and recognizing car
-    license plates in an image or a stream of images from a video.
+import os
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw
+from ultralytics import YOLO
+import matplotlib.pyplot as plt
+from typing import List, Tuple, Union, Dict, Any
+from google.cloud import vision
+from PIL.ExifTags import TAGS
+import exifread
+from hachoir.parser import createParser
+from hachoir.metadata import extractMetadata
+from fractions import Fraction
 
-    It utilizes a pre-trained YOLO (You Only Look Once) model for efficient and accurate
-    object detection and an OCR (Optical Character Recognition) system to read characters
-    on the plates. The class provides methods for processing still images, videos, and
-    extracting license plate text using the OCR.
-
-    Attributes:
-        image_processor (ImageProcessor): Instance used for image pre-processing.
-        object_detector (ObjectDetector): YOLO-based detector for finding license plates.
-        ocr (OCR): OCR system instance for recognizing characters on the plates.
-
-    Methods:
-        recognize_license_plate: Recognizes and annotates the license plate in an image.
-        load_image: Loads an image from disk.
-        extract_license_plate_text: Extracts text from a region containing a license plate.
-        display_and_save: Displays a list of images and saves them to disk.
-        process_video: Processes a video to detect and recognize license plates in every frame.
-        get_media_info: Returns media information like DateTime, GPSLatitude, and GPSLongitude.
-        get_image_info: Extracts information from an image file.
-        extract_gps_data: Extracts GPS information from an image file.
-        parse_gps_info: Parses raw GPS metadata info to human-readable format.
-        convert_to_degrees: Converts raw GPS degree data into decimal degrees.
-        get_video_info: Extracts metadata information from a video file.
-    """from license_plate_insights.image_processing import ImageProcessor
-from license_plate_insights.object_detection import ObjectDetector
-from license_plate_insights.ocr import OCR
 
 class CarLicensePlateDetector:
     """
-    This class is used for detecting and recognizing car license plates.
-
-    It leverages a trained YOLO (You Only Look Once) model for object detection,
-    and an OCR (Optical Character Recognition) system to recognize and decode
-    the characters on the license plates. The processing of images and videos to
-    identify and annotate license plates is encapsulated within this class.
+    A class to detect and recognize license plates on cars using the YOLO model and OCR.
 
     Attributes:
-        weights_path (str): The path to the weights file for the YOLO model.
-
-    Methods:
-        recognize_license_plate(img: np.ndarray) -> Tuple[str, np.ndarray]:
-            Recognizes the license plate in a given image and returns the
-            recognized text alongside an annotated image with a bounding box around
-            the license plate.
+        model (YOLO): An instance of the YOLO object detection model.
     """
 
-    def __init__(self, image_processor, object_detector, ocr):
+    def __init__(self, weights_path: str):
         """
-        Initializes the CarLicensePlateDetector with injected dependencies.
+        Initializes the CarLicensePlateDetector with the given weights.
 
         Args:
-            image_processor (ImageProcessor): An instance of the image processing class.
-            object_detector (ObjectDetector): An instance of the object detection class.
-            ocr (OCR): An instance of the OCR class.
+            weights_path (str): The path to the weights file for the YOLO model.
         """
-        self.image_processor = image_processor
-        self.object_detector = object_detector
-        self.ocr = ocr
+        self.model = YOLO(weights_path)
 
-    def detect_license_plate(self, image: np.ndarray) -> Tuple[str, np.ndarray]:
+    def recognize_license_plate(self, img_path: str) -> np.ndarray:
         """
-        Detects the license plate in an image and returns the recognized text and the region of interest.
+        Recognizes the license plate in an image and draws a rectangle around it.
 
         Args:
-            image (np.ndarray): The image to analyze.
+            img_path (str): The path to the image file containing the car.
 
         Returns:
-            Tuple[str, np.ndarray]: A tuple containing the recognized text and the region of interest.
+            np.ndarray: The image with the license plate region marked and annotated with the recognized text.
         """
-        recognized_text, roi = self.object_detector.recognize_license_plate(image)
-        return recognized_text, roi
+        img = self.load_image(img_path)
+        results = self.model.predict(img, save=False)
+        boxes = results[0].boxes.xyxy
+        recognized_text = None
 
-    def recognize_license_plate(self, img_path: str) -> Tuple[str, np.ndarray]:
-        """
-        Recognizes the license plate in an image provided by the image path and returns the recognized text along with the annotated image.
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box[:4])
 
-        Args:
-            img_path (str): The path to the input image file.
+            # Extract license plate text from the ROI
+            roi = img[y1:y2, x1:x2]
+            license_plate = self.extract_license_plate_text(roi)
 
-        Returns:
-            Tuple[str, np.ndarray]: A tuple containing the recognized text and the annotated image with a bounding box around the license plate.
-        """
-        def annotate_image(self, recognized_text: str, roi: Tuple[int, int, int, int], image: np.ndarray) -> np.ndarray:
-            """
-            Annotates the image with the recognized text at the specified region of interest.
+            # If license plate text is not empty, update recognized_text
+            if license_plate:
+                recognized_text = license_plate
 
-            Args:
-                recognized_text (str): The text recognized from the license plate.
-                roi (Tuple[int, int, int, int]): The region of interest where the license plate is detected.
-                image (np.ndarray): The image to annotate.
+            # Draw a rectangle around the license plate
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-            Returns:
-                np.ndarray: The image with the annotation.
-            """
-            x1, y1, x2, y2 = roi
-            return self.image_processor.draw_text(image, recognized_text, (x1, y1 - 20))
-
-        image = self.load_image(img_path)
-        recognized_text, roi = self.detect_license_plate(image)
+        # Print recognized text if available
         if recognized_text:
-            annotated_image = self.annotate_image(recognized_text, roi, image)
             print(f"License: {recognized_text}")
-            return recognized_text, annotated_image
-        else:
-            return "", img
+            img = self.draw_text(img, recognized_text, (x1, y1 - 20))
+
+        # Prepare info
+        image_info = self.get_image_info(img_path)
         info = {
             'DateTime': image_info.get('DateTime', None),
             'GPSLatitude': image_info.get('GPSLatitude', None),
@@ -114,6 +74,17 @@ class CarLicensePlateDetector:
         }
 
         return info, img
+
+    @staticmethod
+    def draw_text(img: np.ndarray, text: str, xy: Tuple[int, int], color: Tuple[int, int, int] = (0, 255, 0)) -> np.ndarray:
+        """
+        Draws text on an image at a specified location.
+
+        Args:
+            img (np.ndarray): The image on which to draw text.
+            text (str): The text to draw.
+            xy (Tuple[int, int]): The (x, y) position where the text will be drawn on the image.
+            color (Tuple[int, int, int], optional): The color for the text. Defaults to green.
 
         Returns:
             np.ndarray: The image with the text drawn on it.
@@ -235,10 +206,10 @@ class CarLicensePlateDetector:
         Raises:
             Exception: If an error occurs while reading the file.
         """
-        if file_extension.lower() in ('.png', '.jpg', '.jpeg'):
-            return self.get_image_info(content)
-        elif file_extension.lower() in ('.mp4', '.mov', '.avi'):
-            return self.get_video_info(content)
+        if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            return self.get_image_info(file_path)
+        elif file_path.lower().endswith(('.mp4', '.mov', '.avi')):
+            return self.get_video_info(file_path)
         else:
             return "Unsupported file format"
 
