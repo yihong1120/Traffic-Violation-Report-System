@@ -128,3 +128,108 @@ class TestCarLicensePlateDetector(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    # Test case for display_and_save method
+    @patch('matplotlib.pyplot.subplot')
+    @patch('matplotlib.pyplot.axis')
+    @patch('matplotlib.pyplot.imshow')
+    @patch('matplotlib.pyplot.savefig')
+    def test_display_and_save(self, mock_savefig, mock_imshow, mock_axis, mock_subplot):
+        mock_imgs = [np.random.rand(100, 100, 3) * 255 for _ in range(3)]
+        mock_imgs = [img.astype(np.uint8) for img in mock_imgs]
+        mock_save_path = 'mock_save_path.jpg'
+        self.detector.display_and_save(mock_imgs, mock_save_path)
+        mock_savefig.assert_called_once_with(mock_save_path, bbox_inches='tight')
+
+    # Test case for get_media_info method
+    @patch('license_plate_insights.inference.CarLicensePlateDetector.get_image_info')
+    @patch('license_plate_insights.inference.CarLicensePlateDetector.get_video_info')
+    def test_get_media_info(self, mock_get_video_info, mock_get_image_info):
+        mock_file_path = 'mock_file_path'
+        test_scenarios = [
+            {
+                'file_extension': '.jpg',
+                'get_info_output': 'mock_image_info',
+                'expected_result': 'mock_image_info'
+            },
+            {
+                'file_extension': '.mp4',
+                'get_info_output': 'mock_video_info',
+                'expected_result': 'mock_video_info'
+            },
+            {
+                'file_extension': '.txt',
+                'expected_result': 'Unsupported file format'
+            }
+        ]
+
+        # Test different scenarios
+        for scenario in test_scenarios:
+            with self.subTest(scenario=scenario):
+                mock_file_path = 'mock_file_path' + scenario['file_extension']
+                if 'get_info_output' in scenario:
+                    if scenario['file_extension'] in ('.png', '.jpg', '.jpeg'):
+                        mock_get_image_info.return_value = scenario['get_info_output']
+                    else:
+                        mock_get_video_info.return_value = scenario['get_info_output']
+                result = self.detector.get_media_info(mock_file_path)
+                self.assertEqual(result, scenario['expected_result'])
+
+    # Test case for get_image_info method
+    @patch('PIL.Image.open')
+    @patch('license_plate_insights.inference.CarLicensePlateDetector.extract_gps_data')
+    def test_get_image_info(self, mock_extract_gps_data, mock_open):
+        mock_file_path = 'mock_file_path.jpg'
+        mock_datetime = '2022:01:01 00:00:00'
+        mock_gps_info = {'GPSLatitude': 25.0330, 'GPSLongitude': 121.5654}
+        mock_extract_gps_data.return_value = mock_gps_info
+        mock_image = Mock()
+        mock_image._getexif.return_value = {36867: mock_datetime}  # 36867 is the tag for DateTime
+        mock_open.return_value = mock_image
+        image_info = self.detector.get_image_info(mock_file_path)
+        expected_info = {'DateTime': mock_datetime, **mock_gps_info}
+        self.assertEqual(image_info, expected_info)
+
+    # Test case for extract_gps_data method
+    @patch('exifread.process_file')
+    def test_extract_gps_data(self, mock_process_file):
+        mock_file_path = 'mock_file_path.jpg'
+        mock_tags = {
+            'GPS GPSLatitude': '25 deg 1\' 58.80" N',
+            'GPS GPSLatitudeRef': 'N',
+            'GPS GPSLongitude': '121 deg 33\' 56.40" E',
+            'GPS GPSLongitudeRef': 'E'
+        }
+        mock_process_file.return_value = mock_tags
+        gps_info = self.detector.extract_gps_data(mock_file_path)
+        expected_info = {'GPSLatitude': 25.0330, 'GPSLongitude': 121.5654}
+        self.assertEqual(gps_info, expected_info)
+
+    # Test case for parse_gps_info method
+    def test_parse_gps_info(self):
+        mock_gps_info = {
+            'GPS GPSLatitude': '25 deg 1\' 58.80" N',
+            'GPS GPSLatitudeRef': 'N',
+            'GPS GPSLongitude': '121 deg 33\' 56.40" E',
+            'GPS GPSLongitudeRef': 'E'
+        }
+        parsed_info = self.detector.parse_gps_info(mock_gps_info)
+        expected_info = {'GPSLatitude': 25.0330, 'GPSLongitude': 121.5654}
+        self.assertEqual(parsed_info, expected_info)
+
+    # Test case for convert_to_degrees method
+    def test_convert_to_degrees(self):
+        mock_value = (25, 1, 58.8)
+        degrees = self.detector.convert_to_degrees(mock_value)
+        expected_degrees = 25.0330
+        self.assertAlmostEqual(degrees, expected_degrees, places=4)
+
+    # Test case for get_video_info method
+    @patch('hachoir.parser.createParser')
+    @patch('hachoir.metadata.extractMetadata')
+    def test_get_video_info(self, mock_extract_metadata, mock_create_parser):
+        mock_file_path = 'mock_file_path.mp4'
+        mock_metadata = Mock()
+        mock_metadata.exportDictionary.return_value = 'mock_video_info'
+        mock_extract_metadata.return_value = mock_metadata
+        video_info = self.detector.get_video_info(mock_file_path)
+        self.assertEqual(video_info, 'mock_video_info')
