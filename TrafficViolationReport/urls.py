@@ -23,6 +23,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('', include('traffic_data.urls', namespace='traffic_data')),
     path('license_plate_insights/', include('license_plate_insights.urls', namespace='license_plate_insights')),
+    path('llm_customer_service/', include('llm_customer_service.urls', namespace='llm_customer_service')),
 
 ]
 

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'utils',
     'traffic_data',
     'license_plate_insights',
+    'llm_customer_service',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
