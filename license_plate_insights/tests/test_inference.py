@@ -134,6 +134,10 @@ if __name__ == '__main__':
     @patch('matplotlib.pyplot.imshow')
     @patch('matplotlib.pyplot.savefig')
     def test_display_and_save(self, mock_savefig, mock_imshow, mock_axis, mock_subplot):
+        """
+        Test the display_and_save method of CarLicensePlateDetector class to ensure images
+        are correctly displayed and saved as specified.
+        """
         mock_imgs = [np.random.rand(100, 100, 3) * 255 for _ in range(3)]
         mock_imgs = [img.astype(np.uint8) for img in mock_imgs]
         mock_save_path = 'mock_save_path.jpg'
