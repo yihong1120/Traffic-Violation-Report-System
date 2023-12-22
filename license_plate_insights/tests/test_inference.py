@@ -204,6 +204,10 @@ if __name__ == '__main__':
     # Test case for extract_gps_data method
     @patch('exifread.process_file')
     def test_extract_gps_data(self, mock_process_file):
+        """
+        Test the extract_gps_data method of the CarLicensePlateDetector class to ensure it
+        correctly extracts the GPS data from an image.
+        """
         mock_file_path = 'mock_file_path.jpg'
         mock_tags = {
             'GPS GPSLatitude': '25 deg 1\' 58.80" N',
