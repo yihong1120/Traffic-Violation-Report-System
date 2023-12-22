@@ -252,6 +252,10 @@ if __name__ == '__main__':
     @patch('hachoir.parser.createParser')
     @patch('hachoir.metadata.extractMetadata')
     def test_get_video_info(self, mock_extract_metadata, mock_create_parser):
+        """
+        Test the get_video_info method of the CarLicensePlateDetector class to ensure
+        it correctly returns the video information.
+        """
         mock_file_path = 'mock_file_path.mp4'
         mock_metadata = Mock()
         mock_metadata.exportDictionary.return_value = 'mock_video_info'
