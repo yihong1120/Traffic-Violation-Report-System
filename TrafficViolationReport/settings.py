@@ -185,6 +185,9 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(hours=1),
     },
 }
+
+# Test runner
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 '''
 celery -A TrafficViolationReport worker --loglevel=info
 celery -A TrafficViolationReport beat --loglevel=info
