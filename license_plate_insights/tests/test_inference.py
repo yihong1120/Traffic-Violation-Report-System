@@ -186,6 +186,10 @@ if __name__ == '__main__':
     @patch('PIL.Image.open')
     @patch('license_plate_insights.inference.CarLicensePlateDetector.extract_gps_data')
     def test_get_image_info(self, mock_extract_gps_data, mock_open):
+        """
+        Test the get_image_info method of the CarLicensePlateDetector class to ensure it
+        correctly returns the image information including metadata and GPS data.
+        """
         mock_file_path = 'mock_file_path.jpg'
         mock_datetime = '2022:01:01 00:00:00'
         mock_gps_info = {'GPSLatitude': 25.0330, 'GPSLongitude': 121.5654}
