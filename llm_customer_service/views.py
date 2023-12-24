@@ -12,6 +12,15 @@ from django.conf import settings
 @csrf_exempt
 @login_required
 def chat_with_gemini(request):
+    """
+    View function for handling chat requests with the Gemini API.
+
+    This view expects a POST request with a JSON body containing a "message" field.
+    It retrieves the user's previous conversations from the database, calls the Gemini API
+    with the user's input and the dialog history, and saves the new conversation to the database.
+
+    Returns a JSON response with the Gemini API's response.
+    """
     if request.method == 'POST':
         try:
             user_id = request.user.id
