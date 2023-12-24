@@ -2,6 +2,7 @@ import json
 import os
 import requests
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from .models import Conversation
 from google.oauth2 import service_account
@@ -9,9 +10,11 @@ from google.auth.transport.requests import Request
 from django.conf import settings
 
 @csrf_exempt
-def chat_with_gemini(request, user_id):
+@login_required
+def chat_with_gemini(request):
     if request.method == 'POST':
         try:
+            user_id = request.user.id
             # 获取用户输入
             user_input = json.loads(request.body).get('message')
             
