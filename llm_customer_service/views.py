@@ -1,52 +1,104 @@
-from django.http import JsonResponse
-from .models import Conversation, Prompt
-from django.contrib.auth.models import User
-import requests
+import json
 import os
+import requests
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Conversation
+from google.oauth2 import service_account
+from google.auth.transport.requests import Request
+from django.conf import settings
 
-def chat_with_gemini(request):
-    user_id = request.GET.get('user_id')
-    message = request.GET.get('message')
+@csrf_exempt
+def chat_with_gemini(request, user_id):
+    if request.method == 'POST':
+        try:
+            # 获取用户输入
+            user_input = json.loads(request.body).get('message')
+            
+            # 从数据库获取先前的对话记录
+            previous_conversations = Conversation.objects.filter(user_id=user_id).order_by('-timestamp')[:20]
+            dialog_history = "\n".join([conv.message + "\n" + conv.response for conv in reversed(previous_conversations)])
 
-    # 確保用戶存在
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User does not exist'}, status=404)
+            # 调用 Gemini API，传递历史对话和用户输入
+            response = call_gemini_api(user_input, dialog_history)
 
-    # 嘗試獲取最新的預設 prompt，如果不存在則使用空字符串
-    try:
-        default_prompt = Prompt.objects.latest('created_at').text
-    except Prompt.DoesNotExist:
-        default_prompt = ""  # 或者設定一個預設的 fallback prompt
+            # 保存新对话到数据库
+            new_conversation = Conversation(user_id=user_id, message=user_input, response=response)
+            new_conversation.save()
 
-    # 擷取過往20則對話紀錄作為 prompt
-    past_conversations = Conversation.objects.filter(user=user).order_by('-timestamp')[:20]
-    conversation_history = "\n".join([f"User: {conv.message}\nBot: {conv.response}" for conv in past_conversations])
+            return JsonResponse({'response': response})
 
-    # 組合預設 prompt 和對話歷史
-    full_prompt = f"{default_prompt}\n{conversation_history}\nUser: {message}\nBot:"
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
 
-    # 調用 Gemini API
-    response = call_gemini_api(full_prompt)
+    return JsonResponse({'message': 'This is a POST endpoint.'})
 
-    # 儲存對話記錄
-    Conversation.objects.create(user=user, message=message, response=response)
 
-    return JsonResponse({'response': response})
+def call_gemini_api(prompt_text, dialog_history):
+    # 从环境变量中获取服务账户文件路径
+    service_account_file = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if not service_account_file:
+        raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
 
-def call_gemini_api(prompt, message):
-    api_key = os.environ.get("GEMINI_API_KEY")
-    headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json',
+    # 读取服务账户文件内容
+    with open(service_account_file) as file:
+        service_account_info = json.load(file)
+    
+    PROJECT_ID = service_account_info["project_id"]
+    REGION = service_account_info.get("REGION", "asia-southeast1")
+
+    # 创建凭据对象
+    credentials = service_account.Credentials.from_service_account_info(
+        service_account_info,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    )
+
+    # 获取访问令牌
+    credentials.refresh(Request())
+    access_token = credentials.token
+
+    # 构建请求 URL
+    url = f"https://{REGION}-aiplatform.googleapis.com/v1/projects/{PROJECT_ID}/locations/{REGION}/publishers/google/models/gemini-pro:streamGenerateContent"
+
+    # 构建请求正文，包括历史对话和当前提示
+    full_prompt = dialog_history + "\n" + prompt_text
+    payload = {
+        "contents": [{
+            "role": "user",
+            "parts": [{
+                "text": full_prompt
+            }]
+        }],
+        "safety_settings": {
+            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "threshold": "BLOCK_LOW_AND_ABOVE"
+        },
+        "generation_config": {
+            "temperature": 0.2,
+            "topP": 0.8,
+            "topK": 40,
+            "maxOutputTokens": 2560,
+            # "stopSequences": [".", "?", "!"]
+        }
     }
-    data = {
-        'prompt': prompt + f"\nUser: {message}\nBot:",
-        'max_tokens': 150,
-    }
-    response = requests.post('https://api.gemini.com/v1/chat', headers=headers, json=data)
-    if response.status_code == 200:
-        return response.json()['choices'][0]['message'].strip()
-    else:
-        return "Sorry, I can't process your request right now."
+
+    # 发送请求
+    response = requests.post(
+        url,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json; charset=utf-8"
+        },
+        data=json.dumps(payload)
+    )
+
+    # 检查响应并提取文本
+    response_data = response.json()
+    texts = []
+    for candidate in response_data:
+        for content in candidate.get('candidates', []):
+            for part in content.get('content', {}).get('parts', []):
+                texts.append(part.get('text', ''))
+
+    # 将所有文本组合成一个字符串
+    return ' '.join(texts)
