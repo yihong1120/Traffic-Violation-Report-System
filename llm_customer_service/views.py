@@ -9,6 +9,24 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from django.conf import settings
 
+def get_user_input(request):
+    return json.loads(request.body).get('message')
+
+
+def get_previous_conversations(user_id):
+    previous_conversations = Conversation.objects.filter(user_id=user_id).order_by('-timestamp')[:20]
+    return "\n".join([conv.message + "\n" + conv.response for conv in reversed(previous_conversations)])
+
+
+def call_gemini(user_input, dialog_history):
+    return call_gemini_api(user_input, dialog_history)
+
+
+def save_conversation(user_id, user_input, response):
+    new_conversation = Conversation(user_id=user_id, message=user_input, response=response)
+    new_conversation.save()
+
+
 @csrf_exempt
 @login_required
 def chat_with_gemini(request):
@@ -16,18 +34,17 @@ def chat_with_gemini(request):
         try:
             user_id = request.user.id
             # 获取用户输入
-            user_input = json.loads(request.body).get('message')
+            user_input = get_user_input(request)
             
             # 从数据库获取先前的对话记录
-            previous_conversations = Conversation.objects.filter(user_id=user_id).order_by('-timestamp')[:20]
-            dialog_history = "\n".join([conv.message + "\n" + conv.response for conv in reversed(previous_conversations)])
+            dialog_history = get_previous_conversations(user_id)
 
             # 调用 Gemini API，传递历史对话和用户输入
-            response = call_gemini_api(user_input, dialog_history)
+            response = call_gemini(user_input, dialog_history)
 
             # 保存新对话到数据库
-            new_conversation = Conversation(user_id=user_id, message=user_input, response=response)
-            new_conversation.save()
+            save_conversation(user_id, user_input, response)
+            # The conversation is saved within the save_conversation function
 
             return JsonResponse({'response': response})
 
