@@ -158,6 +158,66 @@ class PasswordChangeTest(unittest.TestCase):
         self.assertTrue(True)  # Placeholder for correct test implementation
 
     def test_password_change_done(self):
+        # Placeholder for existing test code
+
+    #******************* LLM CUSTOMER SERVICE VIEWS TESTS *******************#
+
+    def test_get_user_input(self):
+        # Test for the get_user_input function
+        request_data = {'body': json.dumps({'message': 'hello'})}
+        request = self.mock_request(request_data)
+        input_message = get_user_input(request)
+        self.assertEqual(input_message, 'hello', 'Should extract message from request body')
+
+    def test_get_previous_conversations(self):
+        # Test for the get_previous_conversations function with mock data
+        with patch('llm_customer_service.views.Conversation.objects.filter') as mock_filter:
+            mock_conversations = [MagicMock(message='Hi', response='Hello') for _ in range(5)]
+            mock_filter.return_value.order_by.return_value.__getitem__.return_value = mock_conversations
+            result = get_previous_conversations(12345)
+            expected_history = '\n'.join(['Hi\nHello']*5)
+            self.assertEqual(result, expected_history, 'Should return formatted conversation history')
+
+    def test_call_gemini(self):
+        # Test for the call_gemini function with a mock call to the API
+        user_input = 'hello'
+        dialog_history = 'Previous messages'
+        with patch('llm_customer_service.views.call_gemini_api') as mock_call_gemini_api:
+            mock_call_gemini_api.return_value = 'Mocked API Response'
+            result = call_gemini(user_input, dialog_history)
+            mock_call_gemini_api.assert_called_with(user_input, dialog_history)
+            self.assertEqual(result, 'Mocked API Response', 'Should return the response from the API')
+
+    def test_save_conversation(self):
+        # Test for the save_conversation function with mock data
+        user_id = 12345
+        user_input = 'Testing'
+        response = 'Done testing'
+        with patch('llm_customer_service.views.Conversation') as mock_conversation:
+            save_conversation(user_id, user_input, response)
+            mock_conversation.assert_called_once_with(user_id=user_id, message=user_input, response=response)
+            mock_conversation.return_value.save.assert_called_once()
+
+    def test_chat_with_gemini_post(self):
+        # Test for chat_with_gemini POST request and response
+        user_id = 12345
+        user_input = 'Test input'
+        self.mock_request = self.mock_request.post('/', {'message': user_input}, content_type='application/json')
+        self.mock_request.user.id = user_id
+        with patch.multiple('llm_customer_service.views',
+                            get_user_input=DEFAULT,
+                            get_previous_conversations=DEFAULT,
+                            call_gemini=DEFAULT,
+                            save_conversation=DEFAULT,
+                            side_effects=lambda f: f) as mock_methods:
+            mock_methods['get_user_input'].return_value = user_input
+            mock_methods['get_previous_conversations'].return_value = 'Previous conversations\n'
+            mock_methods['call_gemini'].return_value = 'Mock response'
+            response = chat_with_gemini(self.mock_request)
+            self.assertEqual(response.status_code, 200, 'Should return a 200 status code')
+            self.assertEqual(json.loads(response.content)['response'], 'Mock response', 'Should return the correct response')
+
+    #******************** END OF LLM CUSTOMER SERVICE VIEWS TESTS *******************#
         """
         Test the view that is displayed after a password change.
 
