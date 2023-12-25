@@ -27,7 +27,10 @@ jobs:
 #        run: |
 #          python manage.py test
 
-      - name: Run Pylint
-        run: |
-          pylint **/*.py
+#      - name: Run Pylint
+#        run: |
+#          shopt -s globstar && pylint **/*.py
 
+      - name: Lint with Flake8
+        run: |
+          flake8 .
