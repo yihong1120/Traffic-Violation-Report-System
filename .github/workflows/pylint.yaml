@@ -17,11 +17,17 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Run Tests
+      - name: Install Dependencies
         run: |
-          python manage.py test
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
 
       - name: Lint
         run: | 
           pip install pylint-django
           pylint --load-plugins pylint_django --django-settings-module=TrafficViolationReport.settings templates/*
+
+      - name: Run Tests
+        run: |
+          python manage.py test
