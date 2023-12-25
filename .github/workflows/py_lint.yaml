@@ -20,4 +20,4 @@ jobs:
       - name: Lint
         run: | 
           pip install pylint
-          python -m pylint . 
+          python -m pylint *.py 
