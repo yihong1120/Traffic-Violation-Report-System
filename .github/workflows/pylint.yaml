@@ -29,5 +29,5 @@ jobs:
 
       - name: Run Pylint
         run: |
-          pylint Traffic-Violation-Report-System
+          pylint **/*.py
 
