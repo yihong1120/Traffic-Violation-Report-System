@@ -1,4 +1,4 @@
-name: py_lint
+name: pylint
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - workflows
 
 jobs:
-  py_lint:
+  lint:
     runs-on: ubuntu-latest
     steps:
 
@@ -19,5 +19,5 @@ jobs:
 
       - name: Lint
         run: | 
-          pip install pylint
-          python -m pylint *.py 
+          pip install pylint-django
+          python -m pylint-django *.py 
