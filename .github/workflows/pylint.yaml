@@ -20,4 +20,4 @@ jobs:
       - name: Lint
         run: | 
           pip install pylint-django
-          pylint --load-plugins pylint_django --django-settings-module=TrafficViolationReport.settings  --ignore=manage.py *.py 
+          pylint --load-plugins pylint_django --django-settings-module=TrafficViolationReport.settings templates/*
