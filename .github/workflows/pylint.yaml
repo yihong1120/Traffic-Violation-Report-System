@@ -20,17 +20,15 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint 
+          pip install pylint-django
           pip install -r requirements.txt
 
 #      - name: Run Tests
 #        run: |
 #          python manage.py test
 
-#      - name: Run Pylint
-#        run: |
-#          shopt -s globstar && pylint **/*.py
-
-      - name: Lint with Flake8
+      - name: Run Pylint
         run: |
-          flake8 .
+          shopt -s globstar && pylint --load-plugins pylint_django --django-settings-module=./TrafficViolationReport **/*.py
+
+
