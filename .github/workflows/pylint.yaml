@@ -28,7 +28,7 @@ jobs:
 #          python manage.py test
       - name: Set up Django environment
         run: |
-          export DJANGO_SETTINGS_MODULE=TrafficViolationReport.settings
+          python manage.py test
 
       - name: Run Pylint
         run: |
