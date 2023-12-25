@@ -20,4 +20,4 @@ jobs:
       - name: Lint
         run: | 
           pip install pylint
-          python -m pylint . --output-format=colorized --output-file=lint.out
+          python -m pylint . 
