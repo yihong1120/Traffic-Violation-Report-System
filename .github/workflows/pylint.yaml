@@ -22,13 +22,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install pylint-django
           pip install -r requirements.txt
-
-#      - name: Run Tests
-#        run: |
-#          python manage.py test
-      - name: Set up Django environment
+         
+      - name: Create config.json
         run: |
-          python manage.py test
+          mkdir /static
+          cd static
+          cat > config.json << EOF
+          {
+              "SECRET_KEY": "${{ secrets.SECRET_KEY }}",
+              "EMAIL_HOST_USER": "${{ secrets.EMAIL_HOST_USER }}",
+              "DEFAULT_FROM_EMAIL": "${{ secrets.DEFAULT_FROM_EMAIL }}",
+              "EMAIL_HOST_PASSWORD": "${{ secrets.EMAIL_HOST_PASSWORD }}",
+              "DATABASE_NAME": "${{ secrets.DATABASE_NAME }}",
+              "DATABASE_USER": "${{ secrets.DATABASE_USER }}",
+              "DATABASE_PASSWORD": "${{ secrets.DATABASE_PASSWORD }}",
+              "DATABASE_HOST": "${{ secrets.DATABASE_HOST }}",
+              "DATABASE_PORT": "${{ secrets.DATABASE_PORT }}",
+              "GOOGLE_MAPS_API_KEY": "${{ secrets.GOOGLE_MAPS_API_KEY }}",
+              "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}"
+          }
+          EOF
 
       - name: Run Pylint
         run: |
