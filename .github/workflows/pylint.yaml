@@ -26,8 +26,7 @@ jobs:
       - name: Create config.json
         run: |
           mkdir -p static
-          cat > static/config.json << EOF
-          {
+          echo '{
               "SECRET_KEY": "${{ secrets.SECRET_KEY }}",
               "EMAIL_HOST_USER": "${{ secrets.EMAIL_HOST_USER }}",
               "DEFAULT_FROM_EMAIL": "${{ secrets.DEFAULT_FROM_EMAIL }}",
@@ -39,8 +38,7 @@ jobs:
               "DATABASE_PORT": "${{ secrets.DATABASE_PORT }}",
               "GOOGLE_MAPS_API_KEY": "${{ secrets.GOOGLE_MAPS_API_KEY }}",
               "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}"
-          }
-          EOF
+          }' > static/config.json
 
       - name: Run Pylint
         run: |
