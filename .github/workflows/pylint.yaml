@@ -56,5 +56,3 @@ jobs:
       - name: Run Pylint
         run: |
           shopt -s globstar && pylint --load-plugins pylint_django --django-settings-module=TrafficViolationReport.settings **/*.py
-
-
