@@ -35,7 +35,7 @@ SECRET_KEY = config.get('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("No 'SECRET_KEY' set in the environment.")
 
-GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
+GOOGLE_MAPS_API_KEY = config.get('GOOGLE_MAPS_API_KEY')
 if not GOOGLE_MAPS_API_KEY:
     raise ValueError("No 'GOOGLE_MAPS_API_KEY' set in the configuration.")
 
