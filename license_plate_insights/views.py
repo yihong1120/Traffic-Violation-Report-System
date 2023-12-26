@@ -1,3 +1,7 @@
+"""
+This file contains views for the license plate insights in the Traffic Violation Report system.
+It includes functions to upload files, process files, images and videos, and recognize license plates using a trained model.
+"""
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.core.files.storage import FileSystemStorage
