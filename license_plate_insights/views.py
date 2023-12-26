@@ -6,8 +6,8 @@ from .inference import CarLicensePlateDetector
 import cv2
 import os
 
-# 初始化 CarLicensePlateDetector，假設模型文件在 'license_plate_insights/yolov8_models/best.pt'
-detector = CarLicensePlateDetector('license_plate_insights/yolov8_models/best.pt')
+# 初始化 CarLicensePlateDetector，假設模型文件在 'models/best.pt'
+detector = CarLicensePlateDetector('models/best.pt')
 
 @csrf_exempt
 def upload_file(request):
