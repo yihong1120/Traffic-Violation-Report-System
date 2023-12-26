@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 import os
+import json
 
 # Maximum size in bytes before a file is handled in the file system
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*100  # 100MB
