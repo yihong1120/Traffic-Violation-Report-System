@@ -1,13 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
-import json
 import os
-
-# Maximum size in bytes before a file is handled in the file system
-FILE_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*100  # 100MB
-
-# Maximum size of request data (post body)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*100  # 100MB
 
 # Define the base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,21 +16,14 @@ ERROR_IMAGE_ROOT = BASE_DIR / 'error_images'
 # Construct the full path to the pivotal-equinox-404812-6722b643b8f4.json file
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(BASE_DIR, 'static', 'pivotal-equinox-404812-6722b643b8f4.json')
 
-# Construct the full path to the config.json file
-config_path = BASE_DIR / 'static' / 'config.json'
-
-# Open the configuration file using the constructed path
-with open(config_path) as config_file:
-    config = json.load(config_file)
-
 # Development Settings - Not suitable for production
-SECRET_KEY = config.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
-    raise ValueError("No 'SECRET_KEY' set in the configuration.")
+    raise ValueError("No 'SECRET_KEY' set in the environment.")
 
-GOOGLE_MAPS_API_KEY = config.get('GOOGLE_MAPS_API_KEY')
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
 if not GOOGLE_MAPS_API_KEY:
-    raise ValueError("No 'GOOGLE_MAPS_API_KEY' set in the configuration.")
+    raise ValueError("No 'GOOGLE_MAPS_API_KEY' set in the environment.")
 
 DEBUG = True
 ALLOWED_HOSTS = []
@@ -103,19 +89,11 @@ WSGI_APPLICATION = 'TrafficViolationReport.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config.get('DATABASE_NAME'),
-        'USER': config.get('DATABASE_USER'),
-        'PASSWORD': config.get('DATABASE_PASSWORD'),
-        'HOST': config.get('DATABASE_HOST'),
-        'PORT': config.get('DATABASE_PORT'),
-    },
-    'gcp': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config.get('GCP_DATABASE_NAME'),
-        'USER': config.get('GCP_DATABASE_USER'),
-        'PASSWORD': config.get('GCP_DATABASE_PASSWORD'),
-        'HOST': config.get('GCP_DATABASE_HOST'),
-        'PORT': config.get('GCP_DATABASE_PORT'),
+        'NAME': os.environ.get('DATABASE_NAME'),
+        'USER': os.environ.get('DATABASE_USER'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': os.environ.get('DATABASE_HOST'),
+        'PORT': os.environ.get('DATABASE_PORT'),
     }
 }
 
@@ -159,18 +137,18 @@ LOGOUT_REDIRECT_URL = 'login'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = config.get('EMAIL_HOST_USER')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 if not EMAIL_HOST_USER:
-    raise ValueError("No 'EMAIL_HOST_USER' has been set in the configuration.")
+    raise ValueError("No 'EMAIL_HOST_USER' set in the environment.")
 
-EMAIL_HOST_PASSWORD = config.get('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 if not EMAIL_HOST_PASSWORD:
-    raise ValueError("No 'EMAIL_HOST_PASSWORD' has been set in the configuration.")
+    raise ValueError("No 'EMAIL_HOST_PASSWORD' set in the environment.")
 
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = config.get('DEFAULT_FROM_EMAIL')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 if not DEFAULT_FROM_EMAIL:
-    raise ValueError("No 'DEFAULT_FROM_EMAIL' has been set in the configuration.")
+    raise ValueError("No 'DEFAULT_FROM_EMAIL' set in the environment.")
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = (
