@@ -25,9 +25,8 @@ jobs:
          
       - name: Create config.json
         run: |
-          mkdir /static
-          cd static
-          cat > config.json << EOF
+          mkdir -p static
+          cat > static/config.json << EOF
           {
               "SECRET_KEY": "${{ secrets.SECRET_KEY }}",
               "EMAIL_HOST_USER": "${{ secrets.EMAIL_HOST_USER }}",
