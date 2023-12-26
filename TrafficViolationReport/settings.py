@@ -1,3 +1,9 @@
+"""
+This file contains the settings for the Traffic Violation Report system. 
+It includes configurations for installed apps, middleware, database, 
+authentication, email, and other Django settings.
+"""
+
 from datetime import timedelta
 from pathlib import Path
 import os
