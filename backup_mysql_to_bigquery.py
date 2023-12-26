@@ -1,3 +1,9 @@
+"""
+This script is used to backup MySQL data to Google BigQuery. It first sets up the Django environment and imports the necessary Django models. 
+Then, it sets up Google Cloud authentication and initializes the BigQuery client. It defines the BigQuery dataset and tables, 
+prepares the BigQuery data by converting Django model instances to a format suitable for BigQuery, and finally inserts the data into BigQuery.
+"""
+
 import os
 import django
 from datetime import date, datetime, time
