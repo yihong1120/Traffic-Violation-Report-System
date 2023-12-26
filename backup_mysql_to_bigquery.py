@@ -47,6 +47,16 @@ def prepare_bigquery_data(queryset, model_fields, related_field_mappings=None):
             elif isinstance(value, django.db.models.Model):
                 bigquery_field = related_field_mappings.get(field, field)
                 value = str(value.pk)
+        row_data[field] = value
+        bigquery_data.append(row_data)
+    return bigquery_data
+
+# Backup model to BigQuery
+def backup_model_to_bigquery(model_class, table_id, related_field_mappings=None):
+    queryset = model_class.objects.all()
+    model_fields = [field.name for field in model_class._meta.fields]
+    bigquery_data = prepare_bigquery_data(queryset, model_fields, related_field_mappings)
+    insert_into_bigquery(table_id, bigquery_data)
             # Convert file objects to their string path
             elif isinstance(value, django.db.models.fields.files.FieldFile):
                 value = value.name if value else None
@@ -67,13 +77,7 @@ related_field_mappings = {
 }
 
 # 同步TrafficViolation模型
-traffic_violations = TrafficViolation.objects.all()
-model_fields = [field.name for field in TrafficViolation._meta.fields]
-bigquery_data = prepare_bigquery_data(traffic_violations, model_fields)
-insert_into_bigquery(table_id_trafficviolation, bigquery_data)
+backup_model_to_bigquery(TrafficViolation, table_id_trafficviolation)
 
 # 同步MediaFile模型
-media_files = MediaFile.objects.all()
-model_fields = [field.name for field in MediaFile._meta.fields]
-bigquery_data = prepare_bigquery_data(media_files, model_fields, related_field_mappings)
-insert_into_bigquery(table_id_mediafile, bigquery_data)
+backup_model_to_bigquery(MediaFile, table_id_mediafile, related_field_mappings)
