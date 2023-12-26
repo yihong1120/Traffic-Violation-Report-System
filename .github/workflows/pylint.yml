@@ -1,0 +1,60 @@
+name: pylint
+
+on:
+  push:
+    branches:
+      - master
+      - workflows
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pylint
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+
+      - name: Create config.json
+        run: |
+          mkdir -p static
+          echo '{
+              "SECRET_KEY": "${{ secrets.SECRET_KEY }}",
+              "EMAIL_HOST_USER": "${{ secrets.EMAIL_HOST_USER }}",
+              "DEFAULT_FROM_EMAIL": "${{ secrets.DEFAULT_FROM_EMAIL }}",
+              "EMAIL_HOST_PASSWORD": "${{ secrets.EMAIL_HOST_PASSWORD }}",
+              "DATABASE_NAME": "${{ secrets.DATABASE_NAME }}",
+              "DATABASE_USER": "${{ secrets.DATABASE_USER }}",
+              "DATABASE_PASSWORD": "${{ secrets.DATABASE_PASSWORD }}",
+              "DATABASE_HOST": "${{ secrets.DATABASE_HOST }}",
+              "DATABASE_PORT": "${{ secrets.DATABASE_PORT }}",
+              "GOOGLE_MAPS_API_KEY": "${{ secrets.GOOGLE_MAPS_API_KEY }}",
+              "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}"
+          }' > static/config.json
+
+      - name: Run Pylint
+        run: |
+          shopt -s globstar && pylint --load-plugins pylint_django --django-settings-module=TrafficViolationReport.settings **/*.py
+
+
