@@ -23,6 +23,10 @@ jobs:
           pip install pylint-django
           pip install -r requirements.txt
          
+      - name: Set Environment Variables
+        run: |
+          echo "DJANGO_SETTINGS_MODULE=TrafficViolationReport.settings" >> $GITHUB_ENV
+
       - name: Create config.json
         run: |
           mkdir -p static
