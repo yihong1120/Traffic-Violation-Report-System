@@ -44,13 +44,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    'rest_framework',
+    'corsheaders',
     'reports',
     'accounts',
     'utils',
     'traffic_data',
     'license_plate_insights',
     'llm_customer_service',
-    'django.contrib.sites',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -161,6 +163,29 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
+
+# Django REST Framework 設定
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # 其他設定...
+}
+
+
+# CORS 設定
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Flutter app 的 URL
+    # 其他允許的來源...
+]
+
+# Simple JWT 設定
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    # 其他設定...
+}
 
 # Celery 配置
 CELERY_BEAT_SCHEDULE = {

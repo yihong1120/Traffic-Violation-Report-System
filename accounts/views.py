@@ -15,10 +15,19 @@ from .models import UserProfile
 from utils.utils import generate_random_code
 from django.utils import timezone
 import datetime
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .serializers import UserProfileSerializer
 
 # 假設你有一個 EmailChangeForm 來處理電子郵件的更新
 from .forms import EmailChangeForm
+
+class UserProfileView(APIView):
+    def get(self, request):
+        profiles = UserProfile.objects.all()
+        serializer = UserProfileSerializer(profiles, many=True)
+        return Response(serializer.data)
+
 
 def login(request, *args, **kwargs):
     """
