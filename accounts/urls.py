@@ -1,24 +1,12 @@
-from django.urls import path, include
-from django.contrib.auth.views import LogoutView
-from django.contrib.auth import views as auth_views
-from . import views
+from django.urls import path
+from .views import UserProfileView  # 假设您有一个API视图用于用户资料
+# 导入其他API相关的视图
 
-app_name = 'accounts'
+app_name = 'accounts_api'
 
 urlpatterns = [
-    path('login/', views.login, name='login'),
-    # path('register/', views.register, name='register'),
-    path('verify/', views.verify, name='verify'),
-    path('account/', views.account_view, name='account'),
-    path('validate-username-email/', views.validate_username_email, name='validate-username-email'),
-    path('logout/', LogoutView.as_view(), name='logout'),  # This function logs out the user and redirects them to the login page.
-    # path('password/change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
-    path('password/change/', views.custom_password_change, name='password_change'),
-    path('password/change/done/', views.password_change_done, name='password_change_done'),
-    path('email/change/', views.email_change, name='email_change'),
-    path('social-connections/', views.social_account_connections, name='socialaccount_connections'),
-    path('delete-account/', views.account_delete, name='account_delete'),
-    # 包含 allauth 的 URL
-    # path('', include('allauth.urls')),
-    # path('accounts/', include('allauth.urls')),
+    path('user-profile/', UserProfileView.as_view(), name='user-profile'),
+    # 定义其他API路由...
+    # 例如:
+    # path('some-api-view/', SomeApiView.as_view(), name='some-api-view'),
 ]
