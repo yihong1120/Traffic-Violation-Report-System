@@ -1,6 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import TrafficViolationSerializer, MediaFileSerializer
 from .forms import ReportForm
 from .models import TrafficViolation, MediaFile
 from utils.utils import (
@@ -63,3 +66,16 @@ def dashboard(request):
         form = ReportForm()
 
     return render(request, 'reports/dashboard.html', {'form': form})
+
+@api_view(['GET', 'POST'])
+def traffic_violation_list(request):
+    if request.method == 'GET':
+        violations = TrafficViolation.objects.all()
+        serializer = TrafficViolationSerializer(violations, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = TrafficViolationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
