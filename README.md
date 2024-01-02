@@ -64,18 +64,25 @@ Traffic-Violation-Report-System/
 │   └── ...
 │
 ├── reports/
+│   ├── media/
+│   ├── error_images/
 │   ├── models.py
 │   ├── views.py
 │   ├── urls.py
 │   └── ...
 │
-├── static/
+├── utils/
+│   ├── models.py
+│   ├── views.py
+│   ├── bigquery_utils.py
+│   ├── utils.py
+│   ├── mysql_utils.py
+│   └── ...
+│
+├── static_root/
 │   └── ...
 │
 ├── templates/
-│   └── ...
-|
-├── medias/
 │   └── ...
 │
 ├── manage.py
