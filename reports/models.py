@@ -48,7 +48,7 @@ class PathAndRename(object):
         # 設定新文件名稱為 UUID
         filename = '{}.{}'.format(uuid.uuid4(), ext)
         # 返回包含新路徑的文件名稱
-        return os.path.join(self.sub_path, filename)
+        return os.path.join('reports/media', self.sub_path, filename)
 
 # 在模型中使用 PathAndRename 來處理 'upload_to'
 class MediaFile(models.Model):

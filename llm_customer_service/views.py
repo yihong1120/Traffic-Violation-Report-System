@@ -10,7 +10,6 @@ from google.auth.transport.requests import Request
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Conversation
 from rest_framework.permissions import IsAuthenticated
 
 @csrf_exempt
