@@ -4,7 +4,7 @@ from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from reports.models import TrafficViolation
-from .serializers import TrafficViolationSerializer
+from .serializers import TrafficViolationSerializer, TrafficViolationMarkerSerializer
 from utils.mysql_utils import (
     get_traffic_violation_markers,
     get_traffic_violation_details,
@@ -36,28 +36,28 @@ def home(request):
     context = {'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY}
     return render(request, 'traffic_data/home.html', context)
 
-# @api_view(['GET'])
-# def search_traffic_violations_view(request):
-#     keyword = request.GET.get('keyword', '')
-#     time_range = request.GET.get('timeRange', 'all')
-#     from_date = request.GET.get('fromDate', '')
-#     to_date = request.GET.get('toDate', '')
+@api_view(['GET'])
+def search_traffic_violations_api(request):
+    keyword = request.GET.get('keyword', '')
+    time_range = request.GET.get('timeRange', 'all')
+    from_date = request.GET.get('fromDate', '')
+    to_date = request.GET.get('toDate', '')
 
-#     violations = search_traffic_violations(keyword, time_range, from_date, to_date)
-#     serializer = TrafficViolationSerializer(violations, many=True)
-#     return Response(serializer.data)
+    violations = search_traffic_violations(keyword, time_range, from_date, to_date)
+    serializer = TrafficViolationMarkerSerializer(violations, many=True)
+    return Response(serializer.data)
 
-# @api_view(['GET'])
-# def traffic_violation_markers_view(request):
-#     markers = get_traffic_violation_markers(request)
-#     serializer = TrafficViolationSerializer(markers, many=True)
-#     return Response(serializer.data)
+@api_view(['GET'])
+def traffic_violation_markers_api(request):
+    markers = get_traffic_violation_markers(request)
+    serializer = TrafficViolationMarkerSerializer(markers, many=True)
+    return Response(serializer.data)
 
-# @api_view(['GET'])
-# def traffic_violation_details_view(request, traffic_violation_id):
-#     try:
-#         violation = TrafficViolation.objects.get(traffic_violation_id=traffic_violation_id)
-#         serializer = TrafficViolationSerializer(violation)
-#         return Response(serializer.data)
-#     except TrafficViolation.DoesNotExist:
-#         return Response(status=404)
+@api_view(['GET'])
+def traffic_violation_details_api(request, traffic_violation_id):
+    try:
+        violation = TrafficViolation.objects.get(traffic_violation_id=traffic_violation_id)
+        serializer = TrafficViolationSerializer(violation)
+        return Response(serializer.data)
+    except TrafficViolation.DoesNotExist:
+        return Response(status=404)

@@ -1,12 +1,12 @@
-Django==5.0
+Django==5.0.1
 django_multiupload==0.6.1
-numpy==1.26.2
+numpy==1.26.3
 pytz==2023.3.post1
-django-allauth==0.59
+django-allauth==0.60.0
 mysqlclient==2.2.1
-google-cloud-bigquery==3.14.1
+google-cloud-bigquery==3.15.0
 googlemaps==4.10.0
-ultralytics==8.0.232
+ultralytics==8.1.0
 celery==5.3.6
 opencv-python==4.9.0.80
 google.cloud==0.34.0

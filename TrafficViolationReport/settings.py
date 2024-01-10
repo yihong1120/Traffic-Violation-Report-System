@@ -71,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'TrafficViolationReport.urls'
@@ -120,6 +121,15 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# 允許所有域名進行跨域請求
+CORS_ALLOW_ALL_ORIGINS = True
+
+# 或者，只允許特定域名
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # 允許的前端伺服器地址
+#     "http://127.0.0.1:3000",
+# ]
 
 # Internationalisation
 LANGUAGE_CODE = 'en-us'
