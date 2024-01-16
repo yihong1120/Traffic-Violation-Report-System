@@ -6,17 +6,17 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from datetime import datetime, timedelta
 
-def get_user_records(username: str) -> List[Dict]:
+def get_user_records(id: int) -> List[Dict]:
     """
     Retrieve records for a specific user from the MySQL database.
 
     Args:
-        username: The username for which records are to be retrieved.
+        id: The id of user for which records are to be retrieved.
 
     Returns:
         A list of dictionaries representing the user's records.
     """
-    return list(TrafficViolation.objects.filter(username=username).values())
+    return list(TrafficViolation.objects.filter(id=id).values())
 
 def get_media_records(record_id: str) -> List[Dict]:
     """
