@@ -6,7 +6,7 @@ django-allauth==0.60.0
 mysqlclient==2.2.1
 google-cloud-bigquery==3.15.0
 googlemaps==4.10.0
-ultralytics==8.1.0
+ultralytics==8.1.1
 celery==5.3.6
 opencv-python==4.9.0.80
 google.cloud==0.34.0

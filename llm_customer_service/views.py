@@ -8,7 +8,7 @@ from .models import Conversation
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from django.conf import settings
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
@@ -110,7 +110,7 @@ def call_gemini_api(prompt_text, dialog_history):
     return ' '.join(texts)
 
 @api_view(['POST'])
-@login_required
+@permission_classes([IsAuthenticated])
 def chat_with_gemini_api(request):
     if request.method == 'POST':
         try:

@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from .serializers import TrafficViolationSerializer, MediaFileSerializer
 from .forms import ReportForm
 from .models import TrafficViolation, MediaFile
@@ -16,10 +17,10 @@ from utils.mysql_utils import (
 
 @login_required
 def edit_report(request):
-    username = request.user.username
-    user_records = get_user_records(username)
+    id = request.user.id
+    user_records = get_user_records(id)
 
-    selected_record, form, media_urls = ReportManager.get_record_form_and_media(request, username)
+    selected_record, form, media_urls = ReportManager.get_record_form_and_media(request, id)
 
     context = {
         'user_records': user_records,
@@ -67,15 +68,39 @@ def dashboard(request):
 
     return render(request, 'reports/dashboard.html', {'form': form})
 
-@api_view(['GET', 'POST'])
-def traffic_violation_list(request):
-    if request.method == 'GET':
-        violations = TrafficViolation.objects.all()
-        serializer = TrafficViolationSerializer(violations, many=True)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_traffic_violation_api(request):
+    # 使用已登入的使用者來創建報告
+    user = request.user
+    serializer = TrafficViolationSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        serializer.save(user=user)  # 將報告關聯到已登入的使用者
+        return Response(serializer.data, status=201)
+    
+    return Response(serializer.errors, status=400)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def traffic_violation_list_api(request):
+    # 使用已登入的使用者id過濾違規記錄並取得標題列表
+    user_id = request.user.id
+    violations = TrafficViolation.objects.filter(user_id=user_id).values('id', 'title')
+    return Response(violations)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def traffic_violation_detail_api(request, violation_id):
+    try:
+        # 获取特定交通违规的详细数据
+        violation = TrafficViolation.objects.get(id=violation_id)
+        
+        # 验证用户是否有权访问此报告
+        if violation.user != request.user:
+            return Response({'detail': '您没有权限访问此报告。'}, status=403)
+        
+        serializer = TrafficViolationSerializer(violation)
         return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = TrafficViolationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+    except TrafficViolation.DoesNotExist:
+        return Response(status=404)
