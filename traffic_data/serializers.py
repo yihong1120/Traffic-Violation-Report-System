@@ -8,5 +8,7 @@ class TrafficViolationSerializer(serializers.ModelSerializer):
 
 class TrafficViolationMarkerSerializer(serializers.Serializer):
     traffic_violation_id = serializers.UUIDField()
+    license_plate = serializers.CharField()
+    violation = serializers.CharField()
     lat = serializers.FloatField()
     lng = serializers.FloatField()
