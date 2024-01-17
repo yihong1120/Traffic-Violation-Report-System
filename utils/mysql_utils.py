@@ -134,10 +134,13 @@ def get_traffic_violation_markers(request: HttpRequest) -> JsonResponse:
     Returns:
         A JsonResponse containing the markers for traffic violations.
     """
-    violations = TrafficViolation.objects.values('traffic_violation_id', 'latitude', 'longtitude')
+    violations = TrafficViolation.objects.values('traffic_violation_id', 'latitude', 'longtitude', 'license_plate', 'violation')
+    print(violations)
     markers = [
         {
             'traffic_violation_id': str(v['traffic_violation_id']),
+            'license_plate': str(v['license_plate']),
+            'violation': str(v['violation']),
             'lat': float(v['latitude']),
             'lng': float(v['longtitude']),
         }

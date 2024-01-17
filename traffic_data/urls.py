@@ -11,5 +11,6 @@ urlpatterns = [
     # API path
     path('api/search-traffic-violations/', views.search_traffic_violations_api, name='api_search_traffic_violations'),
     path('api/traffic-violation-markers/', views.traffic_violation_markers_api, name='api_traffic_violation_markers'),
-    path('api/traffic-violation-details/<str:traffic_violation_id>/', views.traffic_violation_details_api, name='api_traffic_violation_details'),
+    # path('api/traffic-violation-details/<str:traffic_violation_id>/', views.traffic_violation_details_api, name='api_traffic_violation_details'),
+    path('api/traffic-violation-details/<uuid:traffic_violation_id>/', views.traffic_violation_details_api, name='api_traffic_violation_details'),
 ]
