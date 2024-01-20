@@ -10,13 +10,17 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.status import HTTP_204_NO_CONTENT
 from .forms import CustomUserCreationForm
 from .models import UserProfile
 from utils.utils import generate_random_code
 from django.utils import timezone
 import datetime
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from .serializers import UserProfileSerializer
 
 # 假設你有一個 EmailChangeForm 來處理電子郵件的更新
@@ -190,3 +194,129 @@ def account_delete(request):
         messages.success(request, 'Your account has been deleted.')
         return redirect('home')  # 假設有一個名為 'home' 的 URL
     return render(request, 'accounts/account_delete_confirm.html')
+
+@api_view(['POST'])
+def login_api(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(username=username, password=password)
+    if user:
+        auth_login(request, user)
+        token, _ = Token.objects.get_or_create(user=user)  # 这里不应该出现问题了
+        return Response({'token': token.key})
+    return Response({'error': 'Invalid Credentials'}, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_api(request):
+    try:
+        # 删除当前用户的认证 Token
+        request.user.auth_token.delete()
+        return Response(status=HTTP_204_NO_CONTENT)
+    except Token.DoesNotExist:
+        return Response(status=HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+def validate_username_email_api(request):
+    username = request.GET.get('username', None)
+    email = request.GET.get('email', None)
+    data = {
+        'username_error': 'This username is already in use.' if User.objects.filter(username=username).exists() else None,
+        'email_error': 'This email is already in use.' if User.objects.filter(email=email).exists() else None,
+    }
+    return Response(data)
+
+@api_view(['POST'])
+def register_api(request):
+    form = CustomUserCreationForm(request.data)
+    if form.is_valid():
+        user = form.save()
+        user = authenticate(username=user.username, password=form.cleaned_data['password1'])
+        if user is not None:
+            auth_login(request, user)
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key})
+    return Response(form.errors, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_user_profile_api(request):
+    code = generate_random_code()
+    verification_code_expiry = timezone.now() + datetime.timedelta(minutes=30)
+    profile, created = UserProfile.objects.get_or_create(
+        user=request.user, 
+        defaults={
+            'email_verified_code': code, 
+            'verification_code_expiry': verification_code_expiry
+        }
+    )
+    # Normally, we should send an email only if the profile was created.
+    if created:
+        send_verification_email(request.user.email, code)
+    return Response({'message': 'Profile created successfully' if created else 'Profile already exists'})
+
+@api_view(['POST'])
+def verify_api(request):
+    code = request.data.get('code')
+    try:
+        profile = UserProfile.objects.get(email_verified_code=code)
+        if profile.is_verification_code_expired():
+            return Response({'error': 'Verification code is expired.'}, status=400)
+
+        profile.email_verified = True
+        profile.email_verified_code = ''
+        profile.save()
+
+        user = profile.user
+        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        return Response({'message': 'Your account has been verified successfully.'})
+    except UserProfile.DoesNotExist:
+        return Response({'error': 'Invalid verification code.'}, status=400)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def account_api(request):
+    profile = UserProfile.objects.get(user=request.user)
+    serializer = UserProfileSerializer(profile)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def email_change_api(request):
+    form = EmailChangeForm(request.data, instance=request.user)
+    if form.is_valid():
+        form.save()
+        return Response({'message': 'Your email has been updated successfully.'})
+    else:
+        return Response(form.errors, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def custom_password_change_api(request):
+    form = PasswordChangeForm(request.user, request.data)
+    if form.is_valid():
+        user = form.save()
+        # 更新 session 以保持用户登录状态
+        update_session_auth_hash(request, user)
+        return Response({'message': 'Your password has been updated successfully!'})
+    else:
+        return Response(form.errors, status=400)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def password_change_done_api(request):
+    # 只是返回一个确认信息
+    return Response({'message': 'Your password has been changed successfully.'})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def social_account_connections_api(request):
+    # 根据你的实际情况实现逻辑
+    # 这里只是返回一个示例响应
+    return Response({'message': 'Social account connections information.'})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def account_delete_api(request):
+    request.user.delete()
+    return Response({'message': 'Your account has been deleted successfully.'})

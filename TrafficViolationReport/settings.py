@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'reports',
     'accounts',
@@ -138,7 +139,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/'
+STATIC_URL = '/static_root/'
 STATIC_ROOT = BASE_DIR / 'static_root'  # Directory for collectstatic to collect static files
 
 # Default primary key field type
