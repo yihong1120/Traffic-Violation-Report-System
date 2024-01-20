@@ -23,8 +23,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 
     path('reports/', include('reports.urls', namespace='reports')),
-    path('api/accounts/', include('accounts.urls')),  # API路由
-    path('accounts/', include('accounts.web_urls', namespace='accounts')),  # 传统视图路由
+    path('accounts/', include('accounts.urls', namespace='accounts')),  # 传统视图路由
     path('', include('traffic_data.urls', namespace='traffic_data')),
     path('license_plate_insights/', include('license_plate_insights.urls', namespace='license_plate_insights')),
     path('llm_customer_service/', include('llm_customer_service.urls', namespace='llm_customer_service')),
