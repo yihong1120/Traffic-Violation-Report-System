@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 import os
+from django.conf import settings
 
 # Maximum size in bytes before a file is handled in the file system
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*100  # 100MB
@@ -46,7 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'rest_framework',
-    'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'reports',
     'accounts',
@@ -181,20 +182,29 @@ REST_FRAMEWORK = {
     # 其他設定...
 }
 
+# 在 settings.py 文件中添加或更新 SIMPLE_JWT 配置
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # 访问 token 的有效期
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # 刷新 token 的有效期
+    'ROTATE_REFRESH_TOKENS': False,  # 如果为 True，每次刷新 token 时都会创建一个新的 refresh token
+    'BLACKLIST_AFTER_ROTATION': True,  # 如果为 True，在刷新 token 后，旧的 refresh token 会被加入黑名单
+
+    'ALGORITHM': 'HS256',  # 使用的签名算法
+    'SIGNING_KEY': settings.SECRET_KEY,  # 用于签名 token 的密钥
+    'VERIFYING_KEY': None,  # 用于验证 token 签名的密钥，如果与 SIGNING_KEY 相同，可以设置为 None
+
+    'AUTH_HEADER_TYPES': ('Bearer',),  # 用于在 HTTP 头中表示 token 类型的字符串
+    'USER_ID_FIELD': 'id',  # 用户模型中作为用户唯一标识的字段
+    'USER_ID_CLAIM': 'user_id',  # token 负载中表示用户 ID 的字段
+
+    # ... 如果有其他配置，可以继续添加 ...
+}
 
 # CORS 設定
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Flutter app 的 URL
     # 其他允許的來源...
 ]
-
-# Simple JWT 設定
-from datetime import timedelta
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    # 其他設定...
-}
 
 # Celery 配置
 CELERY_BEAT_SCHEDULE = {
