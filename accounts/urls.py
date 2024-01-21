@@ -35,6 +35,4 @@ urlpatterns = [
     path('api/email-change/', api_views.email_change_api, name='api_email_change'),
     path('api/social-connections/', api_views.social_account_connections_api, name='api_socialaccount_connections'),
     path('api/delete-account/', api_views.account_delete_api, name='api_account_delete'),
-    # path('', include('allauth.urls')),
-    # path('accounts/', include('allauth.urls')),
 ]
