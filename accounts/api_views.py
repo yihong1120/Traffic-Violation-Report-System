@@ -28,7 +28,9 @@ def login_api(request):
     if user:
         auth_login(request, user)
 
-        # 为用户创建 JWT tokens
+        # 确保 UserProfile 存在
+        UserProfile.objects.get_or_create(user=user)
+
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
@@ -60,12 +62,10 @@ def logout_api(request):
 def get_user_info_api(request):
     try:
         user_profile = UserProfile.objects.get(user=request.user)
-        print(user_profile)
         serializer = UserProfileSerializer(user_profile)
-        print(serializer.data)
         return Response(serializer.data)
     except UserProfile.DoesNotExist:
-        return Response({"error": "UserProfile not found."}, status=404)
+        return Response({"error": f"UserProfile not found for user: {request.user.username}"}, status=404)
     
 @api_view(['GET'])
 def validate_username_email_api(request):
@@ -82,6 +82,9 @@ def register_api(request):
     form = CustomUserCreationForm(request.data)
     if form.is_valid():
         user = form.save()
+        # 在这里创建 UserProfile
+        UserProfile.objects.get_or_create(user=user)  # 使用 get_or_create 避免重复创建
+
         user = authenticate(username=user.username, password=form.cleaned_data['password1'])
         if user is not None:
             auth_login(request, user)
@@ -91,6 +94,7 @@ def register_api(request):
                 'access': str(refresh.access_token),
             })
     return Response(form.errors, status=400)
+
 
 
 @api_view(['POST'])
