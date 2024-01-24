@@ -19,7 +19,7 @@ def update_target_version(new_version):
         lines[update_strategy_index] = f'update strategy: new_strategy_value\n'
     with open(file_path, 'w') as file:
         for line in lines:
-            if line.startswith('target upload count:'):
+            if line.startswith('target version:'):
                 line = f'target version: {new_version}\n'
             file.write(line)
         if line.startswith('target service account:')
