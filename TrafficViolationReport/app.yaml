@@ -8,7 +8,7 @@ def update_target_version(new_version):
     Returns:
         None
     """
-    file_path = './app.yaml'
+    file_path = '/home/runner/work/Traffic-Violation-Report-System/Traffic-Violation-Report-System/app.yaml'
     # os.path.join(os.path.dirname(__file__), 'app.yaml')
 
     with open(file_path, 'r') as file:
@@ -31,7 +31,7 @@ def test_update_target_version():
     update_target_version('20240125t090000')
 
     # Verify the target version is updated
-    with open('TrafficViolationReport/app.yaml', 'r') as file:
+    with open('/home/runner/work/Traffic-Violation-Report-System/Traffic-Violation-Report-System/app.yaml', 'r') as file:
         content = file.read()
         assert 'target version: 20240125t090000' in content
 
