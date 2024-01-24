@@ -13,11 +13,15 @@ def update_target_version(new_version):
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
+    timeout_index = next((i for i, line in enumerate(lines) if 'timeout' in line), -1)
+    if timeout_index != -1:
+        lines[timeout_index] = f'timeout: 120s\n'
     with open(file_path, 'w') as file:
         for line in lines:
             if line.startswith('target upload count:'):
                 line = f'target version: {new_version}\n'
             file.write(line)
+        if line.startswith('target service account:')
         if line.startswith('target service account:'))
 
 
