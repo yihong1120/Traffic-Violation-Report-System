@@ -13,6 +13,14 @@ def update_target_version(new_version):
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
+        
+    # Adjust the resources configuration
+    resources_index = next((i for i, line in enumerate(lines) if 'resources' in line), -1)
+    if resources_index != -1:
+        lines[resources_index] = 'resources:
+  cpu: 1
+  memory_gb: 2
+'
 
     # Add necessary environment variables for the deployment
     lines.append('  new_environment_variable: new_environment_value\n')
@@ -45,6 +53,8 @@ def test_update_target_version():
 
     # Verify the target version is updated
     with open('/home/runner/work/Traffic-Violation-Report-System/Traffic-Violation-Report-System/app.yaml', 'r') as file:
+    # Update the deployment resources, if necessary
+code_to_run_to_update_resources()
         content = file.read()
         assert 'target version: 20240125t090000' in content
 
