@@ -8,7 +8,7 @@ def update_target_version(new_version):
     Returns:
         None
     """
-    file_path = 'path/to/new/app.yaml'
+    file_path = './app.yaml'
     # os.path.join(os.path.dirname(__file__), 'app.yaml')
 
     with open(file_path, 'r') as file:
@@ -36,7 +36,7 @@ def test_update_target_version():
         assert 'target version: 20240125t090000' in content
 
     # Clean up the temporary app.yaml file
-    os.remove('TrafficViolationReport/app.yaml')
+    os.remove('./app.yaml')
     pass
 
 
