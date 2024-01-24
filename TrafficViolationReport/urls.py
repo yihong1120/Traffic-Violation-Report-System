@@ -27,9 +27,6 @@ urlpatterns = [
     path('', include('traffic_data.urls', namespace='traffic_data')),
     path('license_plate_insights/', include('license_plate_insights.urls', namespace='license_plate_insights')),
     path('llm_customer_service/', include('llm_customer_service.urls', namespace='llm_customer_service')),
-
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 # 在開發環境中服務媒體文件
