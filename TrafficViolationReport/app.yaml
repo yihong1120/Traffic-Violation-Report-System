@@ -8,7 +8,7 @@ def update_target_version(new_version):
     Returns:
         None
     """
-    file_path = 'path_to_app_yaml_file' # Provide the path to the app.yaml file
+    file_path = 'path_to_new_app_yaml_file' # Provide the path to the new app.yaml file
     # os.path.join(os.path.dirname(__file__), 'app.yaml')
 
     with open(file_path, 'r') as file: # Open the app.yaml file for reading
@@ -34,7 +34,8 @@ def update_target_version(new_version):
                 line = f'target version: {new_version}\n'
             file.write(line)
         if line.startswith('  new_environment_variable:')
-        if line.startswith('target service account:'))
+        if line.startswith('target service account:')
+            line = f'target service account: {new_service_account_value}\n')
 
 
 # Unit tests
