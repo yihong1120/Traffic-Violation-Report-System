@@ -9,7 +9,7 @@ def update_target_version(new_version):
         None
     """
     file_path = 'TrafficViolationReport/app.yaml'
-    os.path.join(os.path.dirname(__file__), 'app.yaml')
+    # os.path.join(os.path.dirname(__file__), 'app.yaml')
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
