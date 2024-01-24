@@ -8,12 +8,11 @@ def update_target_version(new_version):
     Returns:
         None
     """
-    file_path = 'TrafficViolationReport/app.yaml'
+    file_path = 'path/to/new/app.yaml'
     # os.path.join(os.path.dirname(__file__), 'app.yaml')
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
-
     with open(file_path, 'w') as file:
         for line in lines:
             if line.startswith('target version:'):
