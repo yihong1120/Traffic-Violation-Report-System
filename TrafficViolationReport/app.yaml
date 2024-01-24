@@ -8,10 +8,10 @@ def update_target_version(new_version):
     Returns:
         None
     """
-    file_path = 'path_to_app_yaml_file'
+    file_path = 'path_to_app_yaml_file' # Provide the path to the app.yaml file
     # os.path.join(os.path.dirname(__file__), 'app.yaml')
 
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r') as file: # Open the app.yaml file for reading
         lines = file.readlines()
         
     # Adjust the resources configuration
