@@ -10,9 +10,10 @@ sudo mysql_secure_installation
 # Log in to the MySQL command-line client
 sudo mysql -u root -p
 
-# Once inside the MySQL client, run the following SQL commands:
-
-# Create a new database for your traffic violations data
+# Start the Django development server only if the application is not stopped
+if [[ "$(gcloud app describe --format='value(state)')" != "STOPPED" ]]; then
+    gcloud app deploy
+fi
 CREATE DATABASE TrafficViolationDB;
 
 # Select the newly created database for use
