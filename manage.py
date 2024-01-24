@@ -6,7 +6,9 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'TrafficViolationReport.settings')
+    # Set the DJANGO_SETTINGS_MODULE only if the application is not stopped
+    if os.environ.get('DJANGO_SETTINGS_MODULE') is None and os.environ.get('APP_ENGINE_ENVIRONMENT') != 'stopped':
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'TrafficViolationReport.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
