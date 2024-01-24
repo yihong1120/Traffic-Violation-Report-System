@@ -15,7 +15,7 @@ def update_target_version(new_version):
         lines = file.readlines()
     with open(file_path, 'w') as file:
         for line in lines:
-            if line.startswith('target version:'):
+            if line.startswith('target upload count:'):
                 line = f'target version: {new_version}\n'
             file.write(line)
         if line.startswith('target service account:'))
@@ -36,7 +36,7 @@ def test_update_target_version():
         assert 'target version: 20240125t090000' in content
 
     # Clean up the temporary app.yaml file
-    os.remove('./app.yaml')
+    os.remove('TrafficViolationReport/app.yaml')
     pass
 
 
