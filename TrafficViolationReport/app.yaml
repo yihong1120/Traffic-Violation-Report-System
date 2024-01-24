@@ -8,14 +8,15 @@ def update_target_version(new_version):
     Returns:
         None
     """
-    file_path = '/home/runner/work/Traffic-Violation-Report-System/Traffic-Violation-Report-System/app.yaml'
+    file_path = 'path_to_app_yaml_file'
     # os.path.join(os.path.dirname(__file__), 'app.yaml')
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
-    timeout_index = next((i for i, line in enumerate(lines) if 'timeout' in line), -1)
-    if timeout_index != -1:
-        lines[timeout_index] = f'timeout: 120s\n'
+        # replace the update strategy with a new value if necessary
+    update_strategy_index = next((i for i, line in enumerate(lines) if 'update strategy' in line), -1)
+    if update_strategy_index != -1:
+        lines[update_strategy_index] = f'update strategy: new_strategy_value\n'
     with open(file_path, 'w') as file:
         for line in lines:
             if line.startswith('target upload count:'):
@@ -28,8 +29,11 @@ def update_target_version(new_version):
 # Unit tests
 def test_update_target_version():
     # Create a temporary app.yaml file for testing
-    with open('TrafficViolationReport/app.yaml', 'w') as file:
-        file.write('target version: 20240124t134608\n')
+        with open(file_path, 'w') as file:
+        for line in lines:
+            if line.startswith('target version:'):
+                line = f'target version: {new_version}\n'
+            file.write(line)
 
     # Update the target version
     update_target_version('20240125t090000')
