@@ -13,6 +13,9 @@ def update_target_version(new_version):
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
+
+    # Add necessary environment variables for the deployment
+    lines.append('  new_environment_variable: new_environment_value\n')
         # replace the update strategy with a new value if necessary
     update_strategy_index = next((i for i, line in enumerate(lines) if 'update strategy' in line), -1)
     if update_strategy_index != -1:
@@ -22,7 +25,7 @@ def update_target_version(new_version):
             if line.startswith('target version:'):
                 line = f'target version: {new_version}\n'
             file.write(line)
-        if line.startswith('target service account:')
+        if line.startswith('  new_environment_variable:')
         if line.startswith('target service account:'))
 
 
@@ -31,6 +34,8 @@ def test_update_target_version():
     # Create a temporary app.yaml file for testing
         with open(file_path, 'w') as file:
         for line in lines:
+            # Add necessary environment variables for the deployment
+            file.write('  new_environment_variable: new_environment_value\n')
             if line.startswith('target version:'):
                 line = f'target version: {new_version}\n'
             file.write(line)
