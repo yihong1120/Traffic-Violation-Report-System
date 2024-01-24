@@ -32,8 +32,8 @@ GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
 if not GOOGLE_MAPS_API_KEY:
     raise ValueError("No 'GOOGLE_MAPS_API_KEY' set in the environment.")
 
-DEBUG = True
-ALLOWED_HOSTS = []
+DEBUG = False
+ALLOWED_HOSTS = ['pivotal-equinox-404812.de.r.appspot.com', 'localhost', '127.0.0.1']
 
 SESSION_COOKIE_AGE = 10800  # 3 hours in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -202,7 +202,7 @@ SIMPLE_JWT = {
 
 # CORS 設定
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Flutter app 的 URL
+    # "http://localhost:3000",  # Flutter app 的 URL
     # 其他允許的來源...
 ]
 
