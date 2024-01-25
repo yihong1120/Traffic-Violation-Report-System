@@ -1,5 +1,5 @@
 runtime: python311
-entrypoint: gunicorn -b :$PORT TrafficViolationReport.wsgi
+entrypoint: ./gcp_entrypoint.sh
 
 env_variables:
   DJANGO_SETTINGS_MODULE: 'TrafficViolationReport.settings'
