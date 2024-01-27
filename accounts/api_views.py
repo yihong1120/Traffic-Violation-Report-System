@@ -1,12 +1,10 @@
 from django.conf import settings
-from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.views import APIView
 from django.core.mail import send_mail
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login
@@ -19,6 +17,7 @@ from utils.utils import generate_random_code
 from django.utils import timezone
 import datetime
 from .serializers import UserProfileSerializer
+
 
 @api_view(['POST'])
 def login_api(request):
@@ -39,6 +38,7 @@ def login_api(request):
 
     return Response({'error': 'Invalid Credentials'}, status=400)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  # 确保用户是通过 JWT 认证的
 def logout_api(request):
@@ -57,6 +57,7 @@ def logout_api(request):
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_info_api(request):
@@ -67,6 +68,7 @@ def get_user_info_api(request):
     except UserProfile.DoesNotExist:
         return Response({"error": f"UserProfile not found for user: {request.user.username}"}, status=404)
     
+    
 @api_view(['GET'])
 def validate_username_email_api(request):
     username = request.GET.get('username', None)
@@ -76,6 +78,7 @@ def validate_username_email_api(request):
         'email_error': 'This email is already in use.' if User.objects.filter(email=email).exists() else None,
     }
     return Response(data)
+
 
 @api_view(['POST'])
 def register_api(request):
@@ -96,7 +99,6 @@ def register_api(request):
     return Response(form.errors, status=400)
 
 
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_user_profile_api(request):
@@ -113,6 +115,7 @@ def create_user_profile_api(request):
     if created:
         send_verification_email(request.user.email, code)
     return Response({'message': 'Profile created successfully' if created else 'Profile already exists'})
+
 
 @api_view(['POST'])
 def verify_api(request):
@@ -136,12 +139,14 @@ def verify_api(request):
     except UserProfile.DoesNotExist:
         return Response({'error': 'Invalid verification code.'}, status=400)
     
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def account_api(request):
     profile = UserProfile.objects.get(user=request.user)
     serializer = UserProfileSerializer(profile)
     return Response(serializer.data)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -152,6 +157,7 @@ def email_change_api(request):
         return Response({'message': 'Your email has been updated successfully.'})
     else:
         return Response(form.errors, status=400)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -165,18 +171,13 @@ def custom_password_change_api(request):
     else:
         return Response(form.errors, status=400)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def password_change_done_api(request):
     # 只是返回一个确认信息
     return Response({'message': 'Your password has been changed successfully.'})
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def social_account_connections_api(request):
-    # 根据你的实际情况实现逻辑
-    # 这里只是返回一个示例响应
-    return Response({'message': 'Social account connections information.'})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -194,6 +195,7 @@ def account_delete_api(request):
         return Response({'message': 'Your account has been deleted successfully.'})
     except Exception as e:
         return Response({'error': str(e)}, status=400)
+
 
 def send_verification_email(email, code):
     """
