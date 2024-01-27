@@ -1,3 +1,4 @@
+from os import os
 # TrafficViolationReport/settings/base.py
 
 # Update the SECRET_KEY setting
@@ -16,7 +17,7 @@ SECRET_KEY = 'your_secure_secret_key'
 DEBUG = False
 
 # Other settings...
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Update the DEBUG setting
 DEBUG = False
