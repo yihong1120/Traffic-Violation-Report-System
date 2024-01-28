@@ -179,6 +179,13 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # or 'optional' or 'none'
 
+# Social accounts providers
+SOCIAL_ACCOUNT_PROVIDERS = [
+    'facebook',
+    'google',
+    'twitter',
+    # ... 其他提供商
+]
 
 # Django REST Framework 設定
 REST_FRAMEWORK = {

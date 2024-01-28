@@ -2,12 +2,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
 from .models import UserProfile
 from .serializers import SocialAccountSerializer
 from allauth.socialaccount.models import SocialAccount
-from allauth.socialaccount.providers.registry import ProviderRegistry
 from allauth.socialaccount.models import SocialLogin, SocialToken, SocialApp
-from allauth.socialaccount.providers.oauth.client import OAuth2Error
 from allauth.socialaccount.helpers import complete_social_login
 from django.http import HttpRequest
 
@@ -28,8 +27,9 @@ def social_account_connections_api(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def available_providers_api(request):
-    providers = ProviderRegistry.get_list()
-    providers_data = [{"id": provider.id, "name": provider.name} for provider in providers]
+    # 从 settings 中获取提供商列表
+    providers = settings.SOCIAL_ACCOUNT_PROVIDERS
+    providers_data = [{"id": provider, "name": provider.capitalize()} for provider in providers]
     return Response(providers_data)
 
 
@@ -80,7 +80,5 @@ def social_login_api(request, provider_id):
             'access': str(refresh.access_token),
         })
 
-    except OAuth2Error as e:
-        return Response({'error': 'OAuth2Error: ' + str(e)}, status=400)
     except Exception as e:
-        return Response({'error': 'Exception: ' + str(e)}, status=400)
+        return Response({'error': f'Error during social authentication: {str(e)}'}, status=400)
